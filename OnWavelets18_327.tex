@@ -1,0 +1,2477 @@
+% file: OnWavelets18_327.tex
+% Notes on Wavelets and Filters from an introductory (pedagogical) starting point, based upon 
+% Gilbert Strang, and Kevin Amaratunga. 18.327 Wavelets, Filter Banks and Applications, Spring 2003. (Massachusetts Institute of Technology: MIT OpenCourseWare), http://ocw.mit.edu (Accessed 4 Jul, 2015). License: Creative Commons BY-NC-SA
+%
+% using the sample article template for the amsart document class
+% Typeset with LaTeX format
+% cf. Math Into Latex Third Edition pp. 290
+% This file has my modifications
+% Fund Science! If you like what I'm doing with general Physics research and education outreach, 
+% please consider making a financial contribution at the crowdfunding campaign:
+% ernestyalumni.tilt.com 
+%
+% Facebook      : ernestyalumni 
+% github        : ernestyalumni
+% gmail         : ernestyalumni 
+% linkedin      : ernestyalumni 
+% tumblr        : ernestyalumni 
+% twitter       : ernestyalumni 
+% wordpress.com : ernestyalumni
+% youtube       : ernestyalumni 
+% Tilt/Open     : ernestyalumni
+%
+% 
+% This code is open-source, governed by the Creative Common license.  Use of this code is governed by the Caltech Honor Code: ``No member of the Caltech community shall take unfair advantage of any other member of the Caltech community.'' 
+% 
+
+\documentclass[twoside]{amsart}
+
+\setcounter{tocdepth}{1} % to get subsubsections in toc 
+% cf. http://www.latex-community.org/forum/viewtopic.php?f=47&p=44760
+
+
+\usepackage{amssymb,latexsym}
+\usepackage{graphics}
+\usepackage{graphicx}
+%\usepackage{caption}
+%\usepackage{subcaption}
+
+%\usepackage{mathtools}
+
+\usepackage{tikz}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, urlcolor=blue}
+
+\usetikzlibrary{matrix,arrows}
+
+\usepackage[parfill]{parskip}
+
+\usepackage{verbatim}
+
+\oddsidemargin-0.25cm
+\evensidemargin-0.45cm
+\topmargin-2.05cm
+\textwidth16.75cm
+\textheight25.05cm
+
+\linespread{1.2}
+
+%plain makes sure that we have page numbers
+\pagestyle{plain}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem*{main}{Main Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\theoremstyle{remark}
+\newtheorem*{notation}{Notation}
+
+\numberwithin{equation}{section}
+
+%This defines a new command \questionhead which takes one argument and
+%prints out Question #. with some space.
+\newcommand{\questionhead}[1]
+  {\bigskip\bigskip
+   \noindent{\small\bf Question #1.}
+   \bigskip}
+
+\newcommand{\problemhead}[1]
+  {
+   \noindent{\small\bf Problem #1.}
+   }
+
+\newcommand{\exercisehead}[1]
+  { \smallskip
+   \noindent{\small\bf Exercise #1.}
+  }
+
+\newcommand{\solutionhead}[1]
+  {
+   \noindent{\small\bf Solution #1.}
+   }
+
+
+
+%-----------------------------------
+\begin{document}
+%-----------------------------------
+\title[Wavelets]{On Wavelets and MIT OCW 18.327 Wavelets, Filters, and Applications}
+\author{Ernest Yeung}
+\address{}
+\email{ernestyalumni@gmail.com}
+\urladdr{http://ernestyalumni.wordpress.com}
+\thanks{If you like this pdf and LaTeX file and/or find it useful, please consider making a financial contribution to the crowdfunding campaign I am running at Tilt/Open.  Funds will go into new computer equipment so I could push a number of numerical simulations I want to try out in computational fluid dynamics, first, and quantum super-A-polynomials, which I had written my Masters thesis on, pay myself, and in general, go into a general fund for supporting basic research in the future: one of my ultimate goals is to directly fund theoretical and mathematical physics research with the biggest private and crowdsourced funds seen. }
+
+%Ernest Yeung was supported by Mr. and Mrs. C.W. Yeung, Prof. Robert A. Rosenstone, Michael Drown, Arvid Kingl, Mr. and Mrs. Valerie Cheng, and the Foundation for Polish Sciences, Warsaw University.            }
+
+%I am on linkedin: ernestyalumni. 
+
+%I am crowdfunding on Tilt/Open and at Patreon to support basic sciences research: \url{ernestyalumni.tilt.com} and ernestyalumni at Patreon.  
+
+%Tilt/Open is an open-source crowdfunding platform that is unique in that it offers open-source tools for building a crowdfunding campaign.  Tilt/Open has been used by Microsoft and Dick’s Sporting Goods to crowdfund their respective charity causes.
+
+%Patreon is a subscription crowdfunding service that allows you to directly support the works of artists (and scientists and educators! See the Science and Education section of Patreon), allowing you to be a patron of the arts (and the sciences!). Patreon is run by creators and artists and allows you to be flexible in your support. }
+
+\keywords{Wavelets}
+\subjclass[Wavelets]{Wavelets}
+\date{4 juillet 2015}
+\begin{abstract}
+I wanted to expound here, from an introductory and pedagogical starting point, on wavelets.  Note, my goal here \emph{is not to reinvent the wheel}.  This is meant to be the ``missing companion manual'' to the MIT OCW 18.327 material and to any book or course on or involving Wavelets, with (one of) the value being the Python code closely linked with each concept.  
+\end{abstract}
+
+\maketitle
+
+One day on 18 juin 2015, I find myself needing to learn about wavelets, fast.  Here are notes, solutions to various exercises and ``textbook'' problems, and associated code and code snippets that I found useful in learning about and applying wavelets.  
+
+The first thing I now do when I want to pick up a new skill is to see if the MIT (Massachusetts Institute of Technology) OCW (Open-Course Ware) has a course on it.  So far, I've seen 18.326 Wavelets, Filter Banks and Applications, taught by Strang and Amaratunga in Spring 2003 \cite{GStrangKAmaratunga2003}.  I haven't seen it updated recently.  I'll try to give some updates from my perspective. (Note, this past week, 20150709, I saw that coursera has \href{https://www.coursera.org/course/compmethods}{Computational Methods for Data Analysis}; I'll try to look into that).  
+
+Here are some features I want to mention about this exposition on Wavelets:
+\begin{itemize}
+\item \textbf{Multiresolution analysis as a filtration of $L^2(\mathbb{R})$-algebras, with each subspace $V^j$ equipped with a $k$-algebra, $k^j$, that is an algebra for the coefficients of the $j$-level of resolution scaling function and wavelets.}  I explicitly make clear what spaces we are living on and the mapping involved and make explicit the mapping itself in the so-called filter bank representation with commutative diagrams \ref{SubSec:OnPerfectReconstruction}, \ref{SubSubSec:OrthonormalFilterBanks}.  The operations of convolution and downsampling and upsampling on $L^2(\mathbb{R})$ functions are clearly defined as an algebra and the corresponding operations in the so-called $z$-domain, which is really going to $L^2(\mathbb{C})$, is also clearly defined and the correspondence or ``dictionary'' between $L^2(\mathbb{R})$ and $L^2(\mathbb{C})$ clearly shown. 
+
+Then, with scaling functions and wavelets in a multiresolution analysis, I define a $k$-algebra, $k^j$, associated with each subspace $V^j$, for the $j$-level resolution scaling function and wavelet \emph{coefficients}.  This way, we know exactly which (sub)space ($V^j$ or $V^{j+1}$, or $k^j$ or $k^{j+1}$) we are living on at each step of a filter bank and again, the operations of convolution and downsampling and upsampling are reduced to an algebra (which is easy).  
+\item \textbf{Explicit association of where concept and theory meets application and code}.  \emph{Learning and using wavelets should be as fun as playing video games.}  The original MIT OCW 18.327 material does not tell you which piece of code corresponds to directly with which Handout or Lecture.  In this pdf/LaTeX file, I do tell you, and being able to directly do the Wavelet transforms and plot them immediately and interactively helps out a lot in learning and using wavelets.  Also, all the code is on \href{https://github.com/ernestyalumni/18-327-wavelets-filter-banks}{github}, making it more amenable to editing and playing around with, and won't get dated like the MIT OCW 18.327 materials.
+\item \textbf{Python}. The Matlab Wavelet Toolkit is a black box, as exemplified by the documentation \footnote{\url{http://www.mathworks.com/help/wavelet/ref/upcoef.html}}.  We can do everything we'd want to and more in Python, using the open-source \href{http://www.pybytes.com/pywavelets/}{PyWavelets} library. With \href{http://brew.sh}{Homebrew} and \verb|pip|, installing packages is easy; I've found that installing packages in GNU Octave isn't as easy.  
+\item Again, I want to emphasize that we are \emph{not trying to reinvent the wheel}.  There are plenty of reading material (I should say that the original lectures by Ingrid Daubechies \cite{IDaubechies1992} are excellent and lucid, and she founded the field) and plenty of disparate course lecture notes online.   This is meant to be the ``missing companion manual'' to the MIT OCW 18.327 material and to any book or course on or involving Wavelets, building on top of the MIT OCW 18.327 material.   (One of) The \textbf{value} of these notes is the closely linked \emph{Python code}, and I want to encourage and foster its use, interactively.    
+\end{itemize}
+
+For more exposition (that'd usually go into an ``Introduction'' section) and the rationale behind all this notes and code, and how you can help, go to the end part for the Colophon \ref{Part:Colophon}.  
+
+\tableofcontents
+
+\part{MIT OCW 18.327 Spring 2003}% \cite{GStrangKAmaratunga2003}
+
+\section*{Lecture Notes}
+
+Here are my notes (and my personal perspectives) on the Slides and Handouts for the Lecture Notes in \cite{GStrangKAmaratunga2003}.  
+
+READINGS refer to the Text: Strang and Nguyen. \textbf{Wavelets and Filter Banks}. Wellesley-Cambridge Press, 1997.\cite{GStrangTNguyen1996}
+
+\section{Discrete-time Filters: Convolution; Fourier Transform; Lowpass and Highpass Filters: Handout 1}
+
+Readings: Sec 1.1-1.4, 2.1 \cite{GStrangTNguyen1996}
+
+Let $\begin{aligned}
+  & \quad \\ 
+  & x: \mathbb{R} \to V \\ 
+  & x(t) \in V
+\end{aligned}$, where $V$ vector space, or $\mathbb{R}$-module.   \\
+
+Let $\begin{aligned}
+  & \quad \\ 
+  & y: \mathbb{R} \to V \\ 
+  & y(t) \in V
+\end{aligned}$.   \\
+
+$x$ represents input, as a function of time $t$, and $y$ represents output, as a function of time. 
+
+Let linear  $L:V\to V$, $L \in L(V;V)$ be a linear transform (automorphism?) s.t. $Lx=y$.  
+
+Note for a ``time delay'' $\delta \in \mathbb{R}$, 
+\[
+Lx(t-\delta) = y(t-\delta)
+\]
+
+Let $x(t) = \delta(t)$, with $\delta$ being the Dirac Delta function (in this context).   Then
+\[
+Lx(t) = L\delta(t) =h(t)
+\]
+where $h$, as defined as such immediately above, is the ``response.''  
+
+Then for $x(t) = \sum_{\tau=-\infty}^{\infty} x(\tau) \delta(t-\tau)$
+\[
+Lx(t) = \sum_{\tau=-\infty}^{\infty} x(\tau) h(t-\tau)
+\]
+
+Recall the $L^1$ Fourier transform, such that for $x \in L^1(\mathbb{R}^n)$, with $n=1$ for time, in this case \cite{ELiebMLoss2001},
+\begin{equation}\label{Eq:FT}
+  \boxed{ \widehat{x}(\omega) = \int_{-\infty}^{\infty} x(t) e^{-i\omega t} dt = \sum_{n=-\infty}^{\infty}x(n) e^{-i\omega n} }
+\end{equation}
+and the ``inverse'', (the inverse is well defined for $L^2$; EY : 20150619, correct me if I'm wrong)
+\begin{equation}\label{Eq:iFT}
+x(t)= \frac{1}{2\pi} \int_{-\pi}^{\pi} \widehat{x}(\omega) e^{i\omega t} d\omega
+\end{equation}
+
+\subsection*{Convolution}
+
+define \textbf{convolution} of $f,g$ on $\mathbb{R}^n$
+\begin{definition}
+\begin{equation}  f* g(x) = \int_{ \mathbb{R}^n } f(x-y)g(y)dy \end{equation}
+\end{definition}
+Note $f*g = g*f$ by change of variables.  
+
+
+Now
+\[
+\begin{gathered}
+  y(t) = \int_{-\infty}^{\infty}x(\tau)h(t-\tau)d\tau = \int_{-\infty}^{\infty} d\tau \frac{1}{2\pi} \int_{-\pi}^{\pi} \widehat{x}(\omega) e^{i\omega \tau} d\omega h(t-\tau) e^{-i \omega t} e^{-\omega t} = \frac{1}{2\pi} \int_{-\pi}^{\pi} \widehat{x}(\omega) \widehat{h}(\omega) e^{i\omega t} d\omega \\ 
+  \Longrightarrow \widehat{y}(\omega) = \widehat{x}(\omega) \widehat{h}(\omega)
+\end{gathered}
+\]
+
+Discrete case: if $f,g$ are \emph{discrete}, i.e. $\begin{aligned} & \quad \\
+  & f = f(i) \\
+  & g = g(j) \end{aligned}$, $i,j \in \mathbb{Z}$, then
+\[
+\int_{-\infty}^{\infty} dy f(x-y)g(y) = \sum_{k=-\infty}^{\infty} f(n-k) g(k) = (f*g)(n)
+\]
+
+
+%For $n=1$
+%\[
+%\begin{gathered}
+%  \int_{-\infty}^{\infty} f(x-y)g(y) dy = \frac{1}{(2\pi)^2} \int_{-\pi}^{\pi} \int_{-\pi}^{\pi} d\omega d\omega' \widehat{f}(\omega) \widehat{g}(\omega') \int_{-\infty}^{\infty} e^{i \omega(x-y)} e^{i \omega' y} dy = \frac{1}{2\pi } \int_{-\pi}^{\pi} \int-{-\pi}^{\pi} d\omega d\omega' \widehat{f}(\omega) \widehat{g}(\omega) e^{i\omega x} \delta(\omega - \omega') = \frac{1}{2\pi }\int_{-\pi}^{\pi} d\omega \widehat{f}(\omega) \widehat{g}(\omega)
+%\end{gathered}
+%\]
+
+
+\subsection*{Toeplitz Matrix}
+
+The so-called Toeplitz Matrix representation is thus (I believe): now
+\begin{equation}\label{Eq:inout1}
+y(t) = \sum_{\tau=-\infty}^{\infty} x(\tau) h(t-\tau) = \sum_{\tau=-\infty}^{\infty}h(t-\tau)x(\tau)
+\end{equation}
+Let $\tau$ become matrix index $j$.  \\
+Let $t$ become matrix index $i$.  \\
+Let $h_{\text{toep}} = (h_{\text{toep}})_{ij}$ be the so-called Toeplitz matrix.  Now from Eq. \ref{Eq:inout1}, \\
+$(h_{\text{toep}})_{ij}x_j = h(t-\tau)x_j$. \\
+
+So $(h_{\text{toep}})_{ij} = h(i-j)$ are the matrix entries.  
+
+One should consider \emph{causality}: causality means that $t-\tau \geq 0$ (otherwise, for $t=0$, for say $\tau=1$, $x(\tau=1)$ causes a response for $y(t=0)$.  
+
+\subsection*{Examples}
+\begin{enumerate}
+\item[(a)]
+Low-pass Filter:
+
+\begin{equation}\label{Eq:lowpassfilterteg0}
+y(t) = \frac{1}{2} x(t) + \frac{1}{2} x(t-1) = \sum_{\tau=-\infty}^{\infty} h(t-\tau) x(\tau)
+\end{equation}
+with $\begin{aligned} & \quad \\
+  & h(0) = \frac{1}{2} \\
+  & h(1) = \frac{1}{2} \end{aligned}$ and $0$ otherwise.  
+
+pp. 8 of Sec. 1.2 Lowpass Filter $=$ Moving Average of Strang and Nguyen \cite{GStrangTNguyen1996} defines the acronym FIR, \textbf{finite impulse response}.  Again, consider this low-pass filter example immediately above:
+
+\[
+\sum_{\tau=-\infty}^{\infty} h(t-\tau)x(\tau) = \sum_{n=-\infty}^{\infty} h(n)x(t-n) = y(t) = \frac{1}{2} x(t) + \frac{1}{2} x(t-1) 
+\]
+for $\begin{aligned} & \quad \\ 
+  & n=t-\tau \\
+  & \tau = t- n \end{aligned}$ \\
+So $h(0) = h(1) = \frac{1}{2}$.  Else,  $h(n)=0$.  
+
+So note that so-called ``$H$'' can be rewritten in many ways.  
+
+For $H:L^2(\mathbb{R}) \to L^2(\mathbb{R})$, defined as 
+\[
+\sum_{\tau=-\infty}^{\infty} h(t-\tau)x(\tau) = \sum_{n=-\infty}^{\infty} h(n)x(t-n) = y(t)
+\]
+if $h(n) \neq 0$ only for finite number of $n$'s, then $H = h(n)$ is a \textbf{finite impulse response (FIR) filter}.  
+
+
+
+
+Then
+\[
+\widehat{h}(\omega) = \int_{-\infty}^{\infty} h(t) e^{-i\omega t} dt = \frac{1}{2} + \frac{1}{2} e^{-i\omega}
+\]
+(imagine doing Fourier transforms of Diract delta functions; they ``pick off'' values, -Prof. Alan J. Weinstein, Caltech Ph 12a)
+
+\begin{equation}\label{Eq:lowpassfilteromegaeg0}
+\Longrightarrow \widehat{h}(\omega) = \frac{1}{2}( 1 + e^{-i\omega}) = \cos{ \left( \frac{\omega}{2} \right) } e^{-i \omega/2}
+\end{equation}
+
+\item[(b)] High pass filter:
+
+\[
+\begin{gathered}
+  y(t) = \frac{1}{2} x(t) - \frac{1}{2} x(t-1) \\ 
+  h(t) = \frac{1}{2} \delta(t) - \frac{1}{2} \delta(t-1) \\
+  \widehat{h}(\omega) = \frac{1}{2} - \frac{1}{2} e^{-i\omega} = i \sin{\left( \frac{\omega}{2} \right) } e^{-i \frac{\omega}{2} } = \sin{\left( \frac{\omega}{2} \right) } e^{ -i \frac{ ( \omega - \pi)}{2} }
+\end{gathered}
+\]
+\end{enumerate}
+
+Why they're called low-pass and high-pass filters, I think, is because of this: consider $|h(\omega)|$.  Then for the low-pass filter, $|\widehat{h}(\omega)| = \cos{ \omega/2}$ so that low frequencies near $0$ have a large magnitude of $\widehat{h}$ relative to high frequencies near $\omega = \pi$.  Vice-versa for the high-pass filter with $|\widehat{h}| = \sin{\omega/2}$.  
+
+\subsection*{Python examples}
+
+At this point, I would run \verb|example1.py| and type into the Python prompt \verb|plt.show()| and look at Figure 1 for the Haar lowpass filter and Figure 2 for the Haar lowpass filter.  
+
+Notice the use of numpy's \verb|fft| in \verb|fft| module.  All we're doing is \ref{Eq:FT}.  
+
+If you're wondering what the other ``square'' shaped graphs in the Handout 1 was (as I did), run \verb|Handout_examples.py| (doing \verb|python -i Handout_examples.py| in the directory of tools) and do \verb|plt.show()| and look at Figure 3 and Figure 5.  It's the phase or ``angle'' of the complex valued $\widehat{f}$ as a function of $\omega$.  
+
+Readings: Sec 1.1-1.4, 2.1 \cite{GStrangTNguyen1996}
+
+\section{Sampling Rate Change Operations: Upsampling and Downsampling; Fractional Sampling; Interpolation: Handout 2}
+
+READING: Sec 3.1-3.3 \cite{GStrangTNguyen1996}
+
+\subsection*{Downsampling by $M$ }
+
+\begin{equation}\label{Eq:downsamplingMt}
+y(t) = x(Mt)
+\end{equation}
+
+Apply the Fourier transform, Eq. \ref{Eq:FT}, to both sides:
+
+\[
+\widehat{y}(\omega) = \sum_{n=-\infty}^{\infty} x(Mn) e^{-i\omega m} = \sum_{m=nN} x(m) e^{-i \omega \frac{m}{M}}
+\]
+At this point, we need an identity, namely, 
+\begin{equation}\label{Eq:complexsumaroundcircle}
+\frac{1}{M} \sum_{k=0}^{M-1} ( e^{ -i \frac{2\pi}{M} m } )^k = \begin{cases} 1 & \text{ if } m = n M \\ 0 & \text{ otherwise } \end{cases}
+\end{equation}
+For the first few cases: \\
+$M=1$,
+\[
+(e^{ -i 2\pi m})^0 = 1 \quad \, m = n 
+\]
+$M=2$
+\[
+\frac{1}{2} \sum_{k=0}^1 (e^{-i \pi m })^k = \frac{1}{2} ( 1 + (-1)^m) = \begin{cases} 1 & \text{ if } m = 2n \\
+  0 & \text{ otherwise } \end{cases}
+\]
+$M=3$
+\[
+\frac{1}{3} \sum_{k=0}^2 (e^{ -i2\pi \frac{m}{3} })^k = \frac{1}{3} ( 1 + e^{-i \frac{2\pi m}{3} } + e^{- i 2\pi m \frac{(2)}{3} } ) = \begin{cases} 1 & \text{ if } m = 3n \\ 0 & \text{ otherwise } \end{cases}
+\]
+However, I think the $=0$ case is nontrivial.  The $m=nM$ case, leading to a sum of $1$ is clear (multiples of $2\pi$ in the argument yields 1 for $e^{ -i \frac{ 2\pi }{M}m } = e^{-i 2\pi n }= 1$).  But $0$ otherwise? 
+
+I suspect that this should have something to do with, in complex analysis, when integrating around a circle, if there are no poles, then the integral (or summation) is $0$.  I'd like to hear someone show this to me, (very) explicitly.
+
+Otherwise, inserting in Eq. \ref{Eq:complexsumaroundcircle}, by the clever trick of multiplying by $1$,
+
+
+\begin{equation}\label{Eq:Downderiv}
+\begin{gathered}
+  \widehat{y}(\omega) = \sum_{m=nM} \frac{1}{M} \sum_{k=0}^{M-1} ( e^{-i \frac{2\pi}{M} m })^k x(m) e^{-i\omega \frac{m}{M}} = \sum_{m=nM} \frac{1}{M} \sum_{k=0}^{M-1} e^{ -i \frac{2\pi k m}{M} } \frac{1}{2\pi } \int_{-\pi}^{\pi} d\omega \widehat{x}(\omega') e^{i \omega' m} e^{-i \omega \frac{m}{M}} = \\
+  = \frac{1}{M} \sum_{k=0}^{M-1} \int_{-\pi}^{\pi} d\omega' \widehat{x}(\omega') \frac{1}{2\pi} \sum_{m=nM} e^{i m (\omega' - \frac{\omega}{M} - \frac{2\pi k}{M}  )} = \boxed{ \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x}(\frac{\omega + 2\pi k}{M} ) }
+\end{gathered}
+\end{equation}
+
+
+%\int_{-\infty}^{\infty} dt x(Mt) e^{-i\omega t} = \int_{-\infty}^{\infty} \frac{d\tau}{M} x(\tau) \exp{ (-i\omega \frac{\tau}{M} ) } = \int_{-\infty}^{\infty} \frac{dt}{M} \frac{1}{2\pi } \int_{-\pi}^{\pi} d\omega' e^{i \omega' \tau} \widehat{x}(\omega') e^{-i \omega\frac{\tau}{M} } = \\
+%  = \frac{1}{2\pi} \int_{-\pi}^{\pi} d\omega' \int_{-\infty}^{\infty} \frac{d\tau}{M} \widehat{x}(\omega') e^{-i ( \frac{\omega}{M} - \omega' )\tau } = \int_{-\pi}^{\pi} d\omega' \frac{1}{M} \widehat{x}(\omega') \delta(\omega' - \frac{\omega}{M} ) = \frac{1}{M}\widehat{x}(\frac{\omega}{M})
+
+
+
+
+\subsection*{Upscaling by $L$}
+
+Apply the Fourier transform, Eq. \ref{Eq:FT}, to both sides:
+
+\[
+y(t) = x\left( \frac{t}{L} \right)
+\]
+\begin{equation}\label{Eq:Upderiv}
+\begin{gathered}
+\widehat{y}(\omega) = \sum_{t=-\infty}^{\infty} y(t) e^{-i\omega t} = \sum_{m=-\infty}^{\infty} x(m) e^{-i \omega mL} = \frac{1}{2\pi} \int_{-\pi}^{\pi} d\omega \sum_{m=-\infty}^{\infty} \widehat{x}(\omega')e^{i\omega' m} e^{-i\omega m L} = \\
+= \frac{1}{2\pi } \int_{-\pi}^{\pi} d\omega \widehat{x}(\omega') \sum_{m=-\infty}^{\infty} \exp{ ( i m( \omega' - \omega L) )} = \int_{-\pi}^{\pi} d\omega \widehat{x}(\omega') \delta(\omega'-\omega L) = \widehat{x}(\omega L)
+\end{gathered}
+\end{equation}
+
+EY : 20150620, in Handout 2, I find the asymmetry in the downsampling and upscaling scaling ($M$ vs. $L$) disconcerting (Eq. \ref{Eq:Downderiv},  Eq. \ref{Eq:Upderiv}).  Why $\widehat{y}(\omega) = \frac{1}{M}\widehat{x}(\frac{\omega}{M})$ for downsampling, but $\widehat{y}(\omega) = \widehat{x}(\omega L)$ for upscaling (no constants in front)?
+
+
+\subsection*{Interpolation} 
+
+The interpolation filter is applying a low pass filter, after a downsampling by $M$ (cf. Eq. (\ref{Eq:downsamplingMt}), Eq. (\ref{Eq:Downderiv})).  I don't know if there's a general form of a low pass filter, so I'll use the basic example in Eq. \ref{Eq:lowpassfilterteg0}, Eq. \ref{Eq:lowpassfilteromegaeg0}.  
+
+\begin{enumerate}
+  \item Apply downsampling by $M$ ($\downarrow M$): 
+\[
+\begin{aligned}
+  & y(t) = x(Mt) \\ 
+  & \widehat{y}(\omega) = \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x}\left( \frac{\omega  +2\pi k }{M} \right) 
+\end{aligned}
+\]
+  \item Apply low pass filter
+\[
+\begin{aligned}
+  & h(t) = \frac{1}{2} ( x(t) + x(t-1)) \\
+  & \widehat{h}(\omega) = \cos{\left( \frac{\omega}{2} \right) } e^{-i \omega/2} = \frac{1}{2} \widehat{x}(\omega)( 1 + e^{-i\omega})
+\end{aligned}
+\]
+For the very last equation, think of the superposition property of the Fourier transform.  
+\end{enumerate}
+
+Then for \emph{interpolation filter} \[
+\begin{aligned}
+  & h\circ y(t) = \frac{1}{2} (x(Mt) + x(M(t-1)) \\ 
+  & \widehat{h} \circ \widehat{y}(\omega) = \frac{1}{M} \sum_{k=0}^{M-1} \frac{1}{2}\widehat{x}\left( \frac{\omega + 2\pi k }{M} \right) (1 + e^{-i \omega })
+\end{aligned}
+\]
+
+
+\subsection*{Fractional Sampling}
+
+I'll employ this notation for downsampling by $M$ ($\downarrow M$) and upsampling by $L$ ($\uparrow L$), so that 
+\begin{equation}\label{Eq:upsamplingdownsampling}
+\boxed{ \begin{aligned}
+  (\downarrow M) : & \begin{aligned} & \quad \\ & \quad \\  
+    & (\downarrow M) x(t) = x(Mt) \\ 
+    & (\widehat{ \downarrow M } )\widehat{x}(\omega) = \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x} \left( \frac{ \omega + 2\pi k }{M} \right) \end{aligned} \\
+  (\uparrow L) : & \begin{aligned} & \quad \\ 
+    & (\uparrow L) x(t) = x\left( \frac{t}{L} \right) \\ 
+    & (\widehat{\uparrow L}) \widehat{x}(\omega) = \widehat{x}(\omega L ) \end{aligned}
+\end{aligned} }
+\end{equation}
+
+Consider 
+\[
+\begin{aligned}
+ & \downarrow M \circ \uparrow L x(t) = x\left( \frac{Mt}{L} \right) \\ 
+& \widehat{\downarrow M} \circ \widehat{ \uparrow L}\widehat{x}(\omega) = \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x}\left( \frac{ \omega L}{M} + \frac{2\pi k }{M} \right) = \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x}\left( \frac{L}{M} ( \omega + \frac{2\pi k }{L} ) \right)
+\end{aligned}
+\]
+
+I think this is ``synthesis'', ``decompressing'', ``fractional synthesis.'' 
+
+\[
+\begin{aligned}
+  & \uparrow L \circ \downarrow M x(t) = x\left( \frac{Mt}{L} \right) \\ 
+  & \widehat{ \uparrow L } \circ \widehat{ \uparrow M } \widehat{x}(\omega ) = \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x}\left( \frac{L}{M} (\omega + 2\pi k) \right)
+\end{aligned}
+\]
+
+I think this is ``analysis'', ``compressing'', or ``fractional sampling.''
+
+Look at how the immediately above two blocks of equations are different in the frequency $\omega$ domain.  The question to ask, in light of Theorem 3.6 of Strang and Nguyen (1996) \cite{GStrangTNguyen1996} is when does $\downarrow M$ and $\uparrow L$ commute?  
+
+Look at the phases in the frequency domain.  
+
+We know that $\widehat{x}$ doesn't change because of the periodicity in $\omega$ by $2\pi$.  Then, examine the phase of $\widehat{ \downarrow M} \circ \widehat{ \uparrow L}$ and $\widehat{ \uparrow L} \circ \widehat{ \downarrow M}$, respectively:
+
+\[
+\begin{aligned}
+  & \frac{L}{M} ( \omega + \frac{2\pi k}{L } ) = \frac{L}{M} ( \omega + \frac{2\pi k}{L} + 2\pi l ) \\ 
+  &  \frac{L}{M} ( \omega + 2\pi k ) = \frac{L}{M}( \omega  +2\pi k + 2\pi m)
+\end{aligned}
+\]
+with $k=0\dots M-1$ and $l,m\in \mathbb{Z}$.  We see that if $M$,$L$ are \emph{relatively prime}, i.e. $M/L$, $M$ divided by $L$ doesn't yield an integer, the greatest common factor is 1.  $k < M$, so $k/L$ is an integer, $L$ being a multiple of one of $k=0\dots M-1$.  
+
+
+At this point, run \verb|example1.py| by typing in \verb|python -i example1.py| (where \verb|-i| is the ``flag'' to get to the interactive prompt).  To look at that the plots, type in the prompt \verb|plt.show()|.  
+
+Open up \verb|example1.py| in your favorite text editor (I use emacs; you can use TextEdit on a Mac OSX) and compare the plots with the comments (with a hashtag $\#$ in Python) and axis titles and you'll see what's going on.  One should note that in the frequency domain, we're effectively changing the $L$ or $M$ factor multiplying $\omega$ (cf. Eq. \ref{Eq:upsamplingdownsampling}), and that translates to in Python indexing or ``slicing.'' (take a look at the code in \verb|example1.py| for Downsampling)  
+
+
+
+\subsection{On the associated Reading for Handout 2, Sec.3.1-3.3 \cite{GStrangTNguyen1996}}\label{SubSec:Handout2Reading}
+
+READING: Sec 3.1-3.3 \cite{GStrangTNguyen1996}
+
+cf. Sec. 3.3. ``Sampling Operations in the $z$-Domain.  
+
+On pp. 97, Theorem 3.5, here's some clarification with some algebra \cite{GStrangTNguyen1996}.  
+
+This is true
+\[
+\begin{gathered}
+  (\widehat{\downarrow M} \circ \widehat{x})(\omega) = \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x}\left( \frac{ \omega + 2\pi k}{M} \right) \\ 
+\Longrightarrow \boxed{ (\widehat{ \uparrow M } \circ \widehat{ \downarrow M } \circ \widehat{x})(\omega) = (\widehat{\downarrow M} \circ \widehat{x})( M \omega) = \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x}(\omega + \frac{2\pi k}{M}) }
+\end{gathered}
+\]
+In the $z$-transform representation, one obtain $\forall \, k \in \mathbb{Z}$
+\[
+\begin{gathered}
+  \widehat{x}(\omega + \frac{2\pi k}{M}) = \int_{-\infty}^{\infty} dt \exp{ (-i (\omega + \frac{2\pi k}{M}) t) } x(t) = \int_{-\infty}^{\infty} (ze^{i2\pi k/M })^{-t}x(t) = \widehat{x}(ze^{i2\pi k/M} ) 
+\end{gathered}
+\]
+with $z = e^{i \omega}$ and for $k\in \mathbb{Z}$.
+
+%The problem with the $z$-transform is that it is a many-to-one mapping, i.e. for mapping $\omega \mapsto z = e^{i\omega}$, the mapping is surjective, but is not injective.  Note that this is $\mathbb{R} \to S^1$, and it's a covering map.  $\mathbb{R}$ is not homeomorphic to $S^1$.  We should not expect $\mathcal{F}[L^2(\mathbb{R})] = L^2(\mathbb{C})$.  
+
+\section{Filter Banks: Time Domain (Haar example) and Frequency Domain; Conditions for Alias Cancellation and no Distortion; Handout 3}
+
+READING: Sec 4.1 \cite{GStrangTNguyen1996}
+
+Consider 
+e.g. $M=2$ \\
+\phantom{ e.g. } $y(t) = x(2t)$ \\
+\phantom{ e.g. } $h_{tj} = \delta(2t-j) = \delta(t-\frac{j}{2} )$
+
+\begin{equation}
+\begin{aligned}\label{Eq:simpleanalysisM=2}
+  & (\downarrow 2)h_0 = \delta(t- \frac{k}{2} ) \frac{1}{\sqrt{2}} ( \delta(k-\tau) + \delta(k-\tau -1) ) = \frac{1}{\sqrt{2}} ( \delta(2t-\tau) + \delta(2t- (\tau + 1)) \\ 
+  & (\downarrow 2)h_1 = \frac{1}{\sqrt{2}} ( \delta(2t-\tau) - \delta(2t - (\tau + 1))  
+\end{aligned}
+\end{equation}
+
+
+Now
+\[
+((\downarrow 2)h_0)_{t\tau} x_{\tau} = ((\downarrow 2)h_0)_{t\tau}\left( \begin{matrix} \vdots \\ x(-2) \\ x(-1) \\ x(0) \\ x(1) \\ x(2) \\ \vdots \end{matrix} \right) = \frac{1}{\sqrt{2}} \left( \begin{matrix} \vdots \\ x(-2) + x(-3) \\ x(0) + x(-1) \\ x(2) + x(1) \\ \vdots \end{matrix} \right) 
+\]
+
+Then 
+
+\[
+((\downarrow 2)h_0)_{t\tau} = \frac{1}{\sqrt{2}} \left( \begin{matrix} \ddots & & & & & & & \\ 
+  & 1 & 1 &    &   &    &   & \\
+  &    &   & 1 & 1 &    &   & \\
+  &    &   &    &   & 1 & 1 & \\
+  &    &   &    &   &    &   & \ddots \end{matrix} \right)
+\]
+
+
+So also
+\[
+((\downarrow 2)h_1)_{t\tau} = \frac{1}{\sqrt{2}} \left( \begin{matrix} \ddots & & & & & & & \\ 
+  & -1 & 1 &    &   &    &   & \\
+  &    &   & -1 & 1 &    &   & \\
+  &    &   &    &   & -1 & 1 & \\
+  &    &   &    &   &    &   & \ddots \end{matrix} \right)
+\]
+
+$(\uparrow L)$ \\
+
+$y(t) = x\left( \frac{t}{L} \right) = h_{tj} x_j$ \quad \, $\begin{aligned} & \quad \\
+  & \text{ if } j = \frac{t}{L}, \, \text{ then } h_{tj} = 1 \\
+  & \text{ else, } 0 \end{aligned}$ \\
+So 
+\[
+h_{tj} = \delta( \frac{t}{L} - j ) = \delta(t- jL)
+\]
+so for example, e.g. $L=2$, 
+\[
+(\uparrow 2)_{tj}x_j = (\uparrow 2) \left( \begin{matrix} \vdots \\ x(-2) \\ x(-1) \\ x(0) \\ x(1) \\ x(2) \\ \vdots \end{matrix} \right) = \left( \begin{matrix} \vdots \\ x(-1) \\ 0 \\ x(0) \\ 0 \\ x(1) \\ \vdots \end{matrix} \right)
+\]
+
+Now consider  \\
+
+\[
+\begin{gathered}
+  h_0(\uparrow L) = \frac{1}{\sqrt{2}}(\delta(t-k) + \delta(t-k-1)) \delta(k-jL) = \frac{1}{\sqrt{2}} ( \delta(t-jL) + \delta(t-jL-1)) \\ 
+  \Longrightarrow h_0(\uparrow L) = \frac{1}{\sqrt{2}} ( \delta(t-jL) + \delta(t-jL-1)) 
+\end{gathered}
+\]
+
+e.g.
+
+\[
+(h_0(\uparrow 2))_{tj}x_j = (h_0(\uparrow 2))_{tj} \left( \begin{matrix} \vdots \\ x(-1) \\ x(0) \\ x(1) \\ \vdots \end{matrix} \right) = \frac{1}{\sqrt{2}} \left( \begin{matrix} \vdots \\ x(-1) \\ x(-1) \\ x(0) \\ x(0) \\ x(1) \\ \vdots \end{matrix} \right)
+\]
+
+Back to the reading of the 3rd Handout and Slides.  I didn't understand it the first time around reading it: let's gather up what we know so far.  
+
+The handout begins with the Haar Filter Bank slide.  I'm assuming that the example presented is called the \emph{Haar Filter Bank} (does it have anything to do with the Haar wavelet? is my question).
+
+2-channel FIR - FIR is Finite Impulse Response; 2 channel (I think it's called 2-channel because of the low pass and high pass filter for low and high frequencies, respectively).  
+
+Define a linear mapping $H : L^2(\mathbb{R}) \to L^2(\mathbb{R}$ such that $\forall \, x = x(t) \in L^2(\mathbb{R})$, 
+\[
+Hx(t) = y(t) = \sum_{\tau=-\infty}^{\infty} h(t-\tau)x(\tau)
+\]
+
+It takes a number of forms or representations:
+\[
+Hx(t) = \sum_{\tau=-\infty}^{\infty}h(t-\tau) x(\tau) = \sum_{n=-\infty}^{\infty}h(n)x(t-n) = \sum_{\tau=-\infty}^{\infty}h_{t\tau}x_{\tau} 
+\]
+where $h_{t\tau}$ is the so-called \emph{Toeplitz matrix}, \\
+with $t-\tau \geq 0$ for causality, or $n\geq 0$.  
+
+Because of the convolution property, that $\widehat{y}(\omega) =\widehat{x}(\omega) \widehat{h}(\omega)$ for $y= h*x = x*h$, then
+\[
+\widehat{y}=\widehat{h}\widehat{x}
+\]
+
+Let's collect the facts that we know about downsampling $(\downarrow M)$ and upsampling $(\uparrow L)$.
+\[
+\begin{aligned}
+  & (\downarrow M)x(t) = x(Mt)  = \sum_{\tau = -\infty}^{\infty} \delta(Mt-\tau)x(\tau) = \sum_{n=-\infty}^{\infty} \delta( n - (1-M)t )x(t-n) \\ 
+  & (\uparrow L)x(t) = x\left( \frac{t}{L} \right) = \sum_{\tau=-\infty}^{\infty} \delta\left( \frac{t}{L} - \tau \right) x(\tau) = \sum_{n=-\infty}^{\infty} \delta (n-(1-\frac{1}{L})t)x(t-n) = \sum_{\tau=-\infty}^{\infty}\delta(t-L\tau)x(\tau)
+\end{aligned}
+\]
+
+Take the simple example for a \emph{low pass filter} (EY: 20150630 are there other kinds of low pass filters of note to consider?)
+\[
+h_0x(t) = \frac{1}{\sqrt{2}} x(t) + \frac{1}{\sqrt{2}} x(t-1) = \frac{1}{\sqrt{2}} \sum_{\tau=-\infty}^{\infty}(\delta(t-\tau) + \delta(t-1-\tau)) x(\tau) =\frac{1}{\sqrt{2}} \sum_{n=-\infty}^{\infty} (\delta(n) + \delta(n-1))x(t-n)
+\]
+
+Take the simple example for a \emph{high pass filter}
+\[
+h_1x(t) = \frac{1}{\sqrt{2}} x(t) - \frac{1}{\sqrt{2}} x(t-1) = \frac{1}{\sqrt{2}} \sum_{\tau=-\infty}^{\infty}(\delta(t-\tau) - \delta(t-1-\tau)) x(\tau) =\frac{1}{\sqrt{2}} \sum_{n=-\infty}^{\infty} (\delta(n) - \delta(n-1))x(t-n)
+\]
+
+So the so-called \emph{Haar Filter Bank} is just
+\[
+f_0 \circ (\uparrow 2) \circ (\downarrow 2) \circ h_0 + f_1 \circ (\uparrow 2) \circ (\downarrow 2) \circ h_1 : L^2(\mathbb{R}) \to L^2(\mathbb{R})
+\]
+with $\begin{aligned}  &  \quad \\
+  & (\downarrow 2) \circ h_0 \\
+  & (\downarrow 2) \circ h_1 \end{aligned}$ being ``analysis'' and \\
+\phantom{with }$\begin{aligned}  &  \quad \\
+  & f_0 \circ (\uparrow 2) \\
+  & f_1 \circ (\uparrow 2) \end{aligned}$ being ``synthesis''
+
+Instead of doing operations from right to left, one can write the operations going from left to right by ``filter bank'' diagram.  I'll write it as a commutative diagram instead.  For $M=2$
+
+\begin{tikzpicture}
+  \matrix (m) [matrix of math nodes, row sep=6em, column sep=2em, minimum width=1em]
+  {
+x(t) & r_0(t) & y_0(t) & t_0(t) & v_0(t)
+ \\ };
+%  \path[-stealth]
+  \path[|->]
+  (m-1-1) edge node [above] {$h_0$} (m-1-2)
+  (m-1-2) edge node [above] {$(\downarrow 2)$} (m-1-3)
+  (m-1-3) edge node [above] {$(\uparrow 2)$} (m-1-4)
+  (m-1-4) edge node [above] {$f_0$} (m-1-5)
+;
+%\path[->]
+%  (m-1-2) edge node [left] {$\pi^{-1}_M$} (m-2-2)
+%  (m-1-3) edge node [left] {$\pi_M$} (m-2-3);
+\end{tikzpicture}
+
+\begin{tikzpicture}
+  \matrix (m) [matrix of math nodes, row sep=6em, column sep=2em, minimum width=1em]
+  {
+x(t) & r_1(t) & y_1(t) & t_1(t) & v_1(t)
+ \\ };
+%  \path[-stealth]
+  \path[|->]
+  (m-1-1) edge node [above] {$h_0$} (m-1-2)
+  (m-1-2) edge node [above] {$(\downarrow 2)$} (m-1-3)
+  (m-1-3) edge node [above] {$(\uparrow 2)$} (m-1-4)
+  (m-1-4) edge node [above] {$f_0$} (m-1-5)
+;
+%\path[->]
+%  (m-1-2) edge node [left] {$\pi^{-1}_M$} (m-2-2)
+%  (m-1-3) edge node [left] {$\pi_M$} (m-2-3);
+\end{tikzpicture}
+and then $x'(t) = v_0(t) + v_1(t)$.  
+
+Now work it out: from Eq. \ref{Eq:simpleanalysisM=2}, 
+\[
+\begin{aligned}
+  & (\downarrow 2)h_0x(t) = \frac{1}{\sqrt{2}} ( x(2t) + x(2t-1) ) \\ 
+  & (\downarrow 2)h_1x(t) = \frac{1}{\sqrt{2}} ( x(2t) - x(2t-1) )
+\end{aligned}
+\]
+\[
+\begin{aligned}
+  & (\uparrow 2) (\downarrow 2)h_0x(t) = \frac{1}{\sqrt{2}} ( x(2t)  ) \\ 
+  & (\uparrow 2) (\downarrow 2)h_1x(t) = \frac{1}{\sqrt{2}} ( x(2t) )
+\end{aligned}
+\]
+\[
+\begin{aligned}
+  & f_0(\uparrow 2) (\downarrow 2)h_0x(t) = \frac{1}{2}(x(t) + x(t-1) ) = v_0(t) \\ 
+  & f_1(\uparrow 2) (\downarrow 2)h_1x(t) = \frac{1}{2}(x(t) - x(t-1)) = v_1(t)
+\end{aligned}
+\]
+with $f_0 = h_0$, $f_1=h_1$.  So then $x'(t) = v_0(t) + v_1(t) = x(t)$.  ``Perfect reconstruction.''
+
+For $x(t) \in L^2(\mathbb{R})$, suppose
+\[
+x(t) = \sum_{\tau=-\infty}^{\infty} x(\tau) \delta(t-\tau)
+\]
+The \textbf{$z$-transform} is simply the Fourier transform of $x(t)$:
+\begin{equation}
+\widehat{x}(\omega) = \int_{-\infty}^{\infty}dt e^{-i\omega t} \sum_{\tau=-\infty}^{\infty} x(\tau) \delta(t-\tau) = \sum_{ \tau=-\infty}^{\infty} x(\tau) e^{-i\omega \tau} = \sum_{\tau=-\infty}^{\infty}x(\tau)z^{-\tau} = \widehat{x}(z)
+\end{equation}
+for $z=e^{i\omega}$.  
+
+Then the $z$-transform of downsampling $\downarrow M$ and upsampling $\uparrow L$ is the following (cf. Sec. 3.3 Sampling Operations in the $z$-Domain \cite{GStrangKAmaratunga2003}): 
+
+\begin{equation}
+  \begin{gathered} (\widehat{\downarrow M})\widehat{x}(z)=\frac{1}{M}\sum_{k=0}^{M-1} \widehat{x}\left(\frac{\omega + 2\pi k}{M}\right) = \frac{1}{M} \sum_{k=0}^{M-1} \sum_{\tau=-\infty}^{\infty} x(\tau) e^{-i\left( \frac{\omega + 2\pi k }{M} \right) \tau } = \frac{1}{M} \sum_{\tau=-\infty}^{\infty} x(\tau) \sum_{k=0}^{M-1} (e^{\frac{i 2\pi k}{M} } z^{1/M} )^{-\tau} = \\
+=  \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x}( e^{\frac{i2\pi k}{M}} z^{\frac{1}{M}} ) \end{gathered}
+\end{equation}
+
+\begin{equation}
+  (\widehat{\uparrow L})\widehat{x}(z) = \widehat{x}(L\omega) = \sum_{\tau=-\infty}^{\infty} x(\tau) e^{-iL\omega \tau} = \sum_{\tau=-\infty}^{\infty}x(\tau) (z^L)^{-\tau} = \widehat{x}(z^L)
+\end{equation}
+
+For the simple example of a low pass filter $h_0$, recall that $h_0x(t) = \frac{1}{\sqrt{2}} (x(t) + x(t-1))$ and \\
+$x(t) = \sum_{\tau=-\infty}^{\infty}x(\tau) \delta(t-\tau)$
+
+Now
+\[
+\begin{gathered}
+H_0\widehat{x}(\omega) := \int_{-\infty}^{\infty}dt e^{-i \omega t} h_0x(t) = \frac{1}{\sqrt{2}} \int_{-\infty}^{\infty} dt e^{-i \omega t} \left( \sum_{\tau=-\infty}^{\infty} x(\tau) \delta(t-\tau) + x(\tau) \delta(t-1-\tau) \right) = \\
+= \frac{1}{\sqrt{2}} \sum_{\tau=-\infty}^{\infty}x(\tau) e^{-i\omega \tau} + x(\tau) e^{-i \omega(1+\tau) } = \\
+= \frac{1}{\sqrt{2}} \widehat{x}(z) \left( 1 + \frac{1}{z} \right) := H_0\widehat{x}(z)
+\end{gathered}
+\]
+
+Then for for the simple example of a high pass filter, $h_1$,
+\[
+H_1\widehat{x}(z) = \frac{1}{\sqrt{2}} \widehat{x}(z)\left( 1- \frac{1}{z} \right)
+\]
+
+DTFT - discrete-time Fourier Transform.  
+
+The \emph{perfect reconstruction condition} is
+\[
+x'(t) = x(t-\delta)
+\]
+where $\delta$ is the time delay.  
+
+\[
+\int_{-\infty}^{\infty}dt e^{-i\omega t} x(t-\delta) = \int_{-\infty}^{\infty}dt e^{-i\omega t} \sum_{\tau=-\infty}^{\infty} x(\tau) \delta(t- \delta - \tau ) = \sum_{\tau=-\infty}^{\infty} x(t-\delta) e^{-i \omega (\delta +\tau) } = z^{-\delta} \widehat{x}(\omega )
+\]
+So
+\[
+\widehat{x}'(z) = z^{-\delta}x(z)
+\]
+
+
+
+
+\subsection{Aliasing, alias}
+
+Let's consider this example.  Suppose 
+\[
+\begin{aligned}
+\text{ constant }  & x_1(t) = \sum_{n\in \mathbb{Z}} \delta(t-n) \\   
+  & \widehat{x}_1(\omega) = \sum_{n\in \mathbb{Z}} e^{-i \omega n } \\ 
+\text{ alternating }  & x_2(t) = \sum_{n\in \mathbb{Z}} (-1)^n \delta(t-n) \\ 
+  & \widehat{x}_2(\omega) = \sum_{n\in \mathbb{Z}}(-1)^n e^{-i \omega n } = \sum_{n\in \mathbb{Z}} e^{-i ( \omega - \pi ) n }
+\end{aligned}
+\]
+
+Apply downsampling $(\downarrow 2)$.  
+\[
+\begin{aligned}
+  & (\downarrow 2)x_1(t) = x_1(2t) = \sum_{n\in \mathbb{Z}} \delta(2t-n) = \sum_{j\in \mathbb{Z}} \delta(2(t-j)) \\ 
+  & (\downarrow 2)x_2(t) = x_2(2t) = \sum_{n\in \mathbb{Z}} (-1)^n\delta(2t-n) = \sum_{j\in \mathbb{Z}} (-1)^{2j} \delta(2(t-j)) = \sum_{j\in \mathbb{Z}} \delta(2(t-j)) = (\downarrow 2)x_1(t)
+\end{aligned}
+\]
+
+So $x_2(t)$ is the ``alias'' of $x_1(t)$ with respect to $(\downarrow 2)$.  
+
+So, I want to try to generalize this definition of ``aliasing'':
+\[
+\begin{gathered}
+  \forall \, x_1(t), x_2(t) \in L^2(\mathbb{R}), \quad \, (\downarrow M): L^2(\mathbb{R}) \to L^2(\mathbb{R}),  \\ 
+  \text{ if } (\downarrow M) x_1 = (\downarrow M) x_2 \, \text{ then } x_1, x_2 \text{ are \textbf{aliases} with respect to $\downarrow M$ }
+\end{gathered}
+\]
+
+It was interesting to me to consider the frequency domain:
+\[
+\begin{aligned}
+  & (\widehat{\downarrow 2})\widehat{x}_1(\omega) = \frac{1}{2} \sum_{k=0}^{2-1} \sum_{n\in \mathbb{Z}} e^{-i \left( \frac{\omega + 2\pi k }{2} \right) n } = \frac{1}{2} \sum_{k=0}^1 \sum_{n\in \mathbb{Z}} \exp{ \left( -i \left( \frac{\omega}{2} + \pi k \right) n \right) } = \frac{1}{2} \sum_{n\in\mathbb{Z}} e^{ - \frac{i \omega n }{2} } ( 1 + e^{-i \pi n } ) \\
+  & (\widehat{\downarrow 2})\widehat{x}_2(\omega) = \frac{1}{2} \sum_{k=0}^{2-1} \sum_{n\in \mathbb{Z}} e^{-i \left( \frac{\omega + 2\pi k }{2} - \pi \right) n } = \frac{1}{2} \sum_{k=0}^1 \sum_{n\in \mathbb{Z}} \exp{ \left( -i \left( \frac{\omega}{2} + \pi k - \pi \right) n \right) } = \frac{1}{2} \sum_{n\in\mathbb{Z}} e^{ - \frac{i \omega n }{2} } ( 1 + e^{i \pi n } )
+\end{aligned}
+\]
+
+Since 
+\[
+\begin{aligned}
+  & \frac{(1+e^{-i\pi n})}{2} \frac{ e^{i \pi n /2} }{e^{i \pi n /2}} = \frac{ \cos{ \left( \frac{ \pi n }{2} \right) } }{ e^{i \pi n /2} } = (-1)^m /(-1)^m = 1 \\ 
+  &  \frac{ 1 + e^{i \pi n }}{2} \frac{ e^{-i \frac{ \pi }{2} n } }{ e^{-i \pi n /2}} = \frac{ \cos{ \left( \frac{ \pi n }{2} \right) } }{ e^{-i \pi n /2}} = (-1)^m / (-1)^m = 1 
+\end{aligned}
+\]
+where $n = 2m$ and $m\in \mathbb{Z}$.  So in the frequency domain, they're equal too in this example.  
+
+
+
+\subsection{wkeep}
+
+We're going to try to mimic the behavior of Matlab's wkeep \footnote{MathWorks Documentation, wkeep Keep part of vector or matrix \url{http://www.mathworks.com/help/wavelet/ref/wkeep.html}}
+
+Let length of list by $N_0 \in \mathbb{Z}$ \\
+$N_0 \in \mathbb{Z}$ so either $N_0 = \begin{cases} 2K_0 & \text{ even } \\
+  2K_0 - 1 & \text{ odd } \end{cases} \quad \,  \, K_0 \in \mathbb{Z}$ 
+
+Suppose we want $l$ ordered elements of the list $l \in \mathbb{Z}$, so $l = \begin{cases} 2p & \text{ even } \\ 
+  2p-1 & \text{ odd } \end{cases}$ \, $p\in \mathbb{Z}$
+
+Suppose $\begin{aligned} & \quad \\
+  & N_0  = 2K_0 - 1 \\
+  & l = 2p - 1 \end{aligned}$ \quad \, (odd, odd case)
+
+$N_0 = 2(K_0 - 1) +1$ \\
+($K_0-1$ is what modulus arithmetic would give you, i.e. $[N_0/2] = K_0-1$, $N_0 \% 2 = 1$)
+
+$l=2(p-1)+1$
+
+On the ``left'' side of the center, there are $K_0 - 1$ ``ordered elements and we want the last $p-1$ elements 
+\[
+K_0 - 1-(p-1) = K_0-p
+\]
+So start counting the elements to choose from position $K_0-p+1$, counting from 1.
+
+So if we start counting from $0$, we want the $K_0 - p$ position. $K_0 - p=(K_0-1)-(p-1)$ \\
+on the ``right'' side of center, \\
+center's position is at $K_0 - 1+1 = K_0$ (counting from 1).  Counting from $0$, $K_0-1$ is the position. \\
+$K_0+(p-1)$ is position of last element to pick off (counting from 1).  $K_0 + (p-1)-1$ is the position of the last element to pick off (counting from $0$). \\
+
+if $l=2p$, \\
+let's try to mimic what wkeep does in Matlab.  Looking at the MathWorks Documentation, it seems that if we pretend that we eliminate the last element of our list, so that the length is now $N_0 -1 = 2K_0-2 = 2(K_0-1)$, then we'd now want the center piece of length $l$.  
+
+start at $(K_0-1)-p+1$ and last element's position at $K_0 +p-1$.  (counting from 1) 
+
+If $\begin{aligned} & \quad \\
+  & N_0 = 2K_0 \\
+  & l = 2p \end{aligned}$, start at $K_0 -p+1$; last element's position at $K_0 + p $ (counting from $1$) \\
+if $l=2p-1 = 2(p-1)+1$, let's mimic what wkeep does in Matlab.  Pretend we eliminate the last element of our list, so that the length is now $N_0 - 1 = 2K_0 - 1 = 2(K_0-1)+1$ \\
+\phantom{if } start at $(K_0-1) - (p-1)+1 = K_0-p+1$; last element's position at $(K_0-p) + (2p-1) = K_0+p-1 $ (counting from 1).  
+
+\section{Filter Banks (contd.): Perfect Reconstruction; Halfband Filters and Possible Factorizations}
+
+READING: Sec 4.1 \cite{GStrangTNguyen1996}
+
+\section{Modulation and Polyphase Representations: Noble Identities; Block Toeplitz Matrices and Block z-transforms; Polyphase Examples}
+
+READING: Sec 3.4, 4.1-4.4 \cite{GStrangTNguyen1996}
+
+\subsection{On the Readings}
+
+\subsubsection{Noble Identities}\label{SubSubSec:NobleIdentities}
+
+cf. Sec. 3.4 ``Filters Interchanged with Samplers'' \cite{GStrangTNguyen1996}
+
+This is all about the so-called \emph{Noble Identities}.  
+
+For clarification, I will work out many steps explicitly, and repeat many previous derivations.    
+
+Given $x(t) \in L^2(\mathbb{R})$, recall these various representations:
+
+\begin{equation}
+\boxed{  x(t) \overset{\mathcal{F}}{\mapsto} \mathcal{F}[x(t)](\omega)  \equiv \widehat{x}(\omega) = \int_{-\infty}^{\infty}dt x(t) e^{-i\omega t} = \int_{-\infty}^{\infty} dt x(t) z^{-t} \equiv x(z) }
+\end{equation} 
+
+Now note how the so-called $z$-transform is related to the usual Fourier transform.  These objects are formally equivalent and is only a substitution via $e^{i\omega} =z$.  However, the functions live on $L^2(\mathbb{C})$ (see Subsection \ref{SubSec:Handout2Reading}).  
+
+Thus $\begin{aligned} & \quad \\
+  \widehat{x}\left( \frac{ \omega+2\pi k}{M} \right) & = \widehat{x}\left( e^{\frac{i2\pi k}{M}} z^{1/M} \right) \\
+\text{ since }  \exp{ \left( -i \left( \frac{\omega + 2\pi k}{ M} \right) t \right)} & = \left( e^{ \frac{i 2\pi k}{M} } z^{1/M} \right)^{-t} \end{aligned}$ 
+
+and \, $\begin{aligned} & \quad \\
+   \widehat{x}(\omega L) & = \widehat{x}(z^L) \\
+\text{ since }   \exp{ \left( -i \omega L t \right) } & = (z^L)^{-t} \end{aligned}$.  
+
+Also, note that the algebra on $L^2(\mathbb{R})$ in the so-called time domain is \emph{different} from the algebra in the frequency domain.  Explicitly, recall the convolution and its Fourier transform:
+\[
+\begin{aligned}
+  & f*g(t) = \int_{-\infty}^{\infty} d\tau f(t-\tau) g(\tau) \\  
+  & \mathcal{F}[f*g(t)](\omega) = \int_{-\infty}^{\infty} dt e^{-i\omega t} \int_{-\infty}^{\infty} d\tau f(t-\tau)g(\tau) \overset{u=t-\tau}{= } \int_{-\infty}^{\infty} d\tau g(\tau) \int_{-\infty}^{\infty} du e^{-i \omega (u +\tau) } f(u) = \widehat{f}(\omega) \cdot \widehat{g}(\omega)
+\end{aligned}
+\]
+For $L^2(\mathbb{R})$ (which I'll refer to being in the time domain as convention), the multiplication operation for its algebra is the convolution $*$, but in the frequency domain (which I'll denote as $\mathcal{F}[L^2(\mathbb{R})]$, multiplication $\cdot$ is by pointwise multiplication! Thus,
+
+\begin{tikzpicture}
+  \matrix (m) [matrix of math nodes, row sep=2em, column sep=3em, minimum width=1em]
+  {
+L^2(\mathbb{R}) & \mathcal{F}[L^2(\mathbb{R})] \\
+f*g(t) & (\widehat{f}\cdot \widehat{g})(\omega) = \widehat{f}(\omega)\cdot \widehat{g}(\omega)
+\\ };
+  \path[->]
+  (m-1-1) edge node [above] {$\mathcal{F}$} (m-1-2);
+  \path[|->]
+  (m-2-1) edge node [above] {$\mathcal{F}$} (m-2-2);
+\end{tikzpicture}
+
+Thus
+
+\begin{equation}
+\boxed{
+\begin{gathered}
+  \begin{aligned}
+& x(t) \overset{ \downarrow M}{ \mapsto } (\downarrow M \circ x)(t) = x(Mt) \\ 
+& \widehat{x}(\omega) \overset{ \widehat{ \downarrow M} }{ \mapsto } ( \widehat{ \downarrow M } \circ \widehat{x})(\omega) = \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x}\left( \frac{ \omega + 2\pi k}{M} \right) = \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x}(e^{ \frac{i 2\pi k}{M} } z^{1/M} ) \\ 
+\end{aligned} \quad \, \text{ and } \\
+\begin{aligned}
+  & x(t) \overset{ \uparrow L}{ \mapsto } (\uparrow L \circ x)(t) = x\left( \frac{t}{L} \right) \overset{ t\in \mathbb{Z}}{\mapsto } \begin{cases} x(m) & \text{ if } t = Lm, \, m \in\mathbb{Z} \\ 
+    0 & \text{ otherwise } \end{cases} \\ 
+    & \widehat{x}(\omega) \overset{ \widehat{ \uparrow L }}{ \mapsto } (\widehat{ \uparrow L } \circ \widehat{x} )(\omega) = \widehat{x}(\omega L) = \widehat{x}(z^L)
+\end{aligned}
+\end{gathered}
+}
+\end{equation}
+with $\overset{t\in \mathbb{Z}}{ \mapsto }$ denoting the discretization of $t \in \mathbb{Z}$.  \\
+Notice that the operation of $\downarrow M \circ$, $\uparrow L\circ$, the $\circ $ composition, is distinguished from the multiplication operator in the respective algebras.  On $L^2(\mathbb{R})$, $\circ$ is distinguished from convolution $*$.  On $\mathcal{F}[L^2(\mathbb{R})]$, $\circ$ is distinguished from pointwise multiplication $\cdot$.  
+
+It's unclear to me if $\circ$ can be made to ``fit into'' the respective algebras with multiplication operators $*$ or $\cdot$.  Please tell me otherwise.  Otherwise, operations involving $\downarrow M$, $\uparrow L$ are distinguished as such.  
+
+\begin{theorem}[Noble identities]
+The Noble identities are the following:
+ \begin{align}
+  & \boxed{ \widehat{\downarrow M} \circ (G(z^M)\widehat{x}(z) )(z) = G\cdot (\widehat{ \downarrow M \circ x })(z) } \\
+  & \boxed{ \widehat{\uparrow L} \circ (G \cdot \widehat{x})(z) = G(z^L)\cdot (\widehat{\uparrow L}\circ x )(z) }
+\end{align}
+while noting that its form in $L^2(\mathbb{R})$ is, respectively,
+\begin{align}
+  & (G * \downarrow M\circ x)(t) = \int_{-\infty}^{\infty} d\tau G(t-\tau) x(M\tau) \overset{ \tau \in \mathbb{Z} }{\mapsto } \sum_{m\in \mathbb{Z}} G(t-m)x(Mm) \\
+  &  (\uparrow L) \circ G*x(t)  = \int_{-\infty}^{\infty} d\tau G\left( \frac{t}{L} - \tau \right)x(\tau) \overset{ t\in \mathbb{Z}}{\mapsto} \begin{cases} 
+    \sum_{\tau \in \mathbb{Z}} G(m-\tau)x(\tau) & \text{ if } t = Lm, \, m \in \mathbb{Z} \\
+    0 & \text{ otherwise }
+\end{cases}
+\end{align}
+\end{theorem}
+noting that $(z)$ notation simply denotes that these are functions of $z \in \mathbb{C}$, and that $\overset{t\in \mathbb{Z}}{\mapsto}$ denotes discretization of $t$.    
+
+\begin{proof}
+Distinguishing between operations and understanding that algebra over a field is just algebra makes this easy.
+
+Let $G(z^M) \widehat{x}(z) := \widehat{t}(z)$.  Then
+\[
+\begin{gathered}
+  \widehat{ \downarrow M} \circ G(z^M)\widehat{x}(z) = \widehat{ \downarrow M} \circ \widehat{t}(z) = \frac{1}{M} \sum_{k=0}^{M-1} \widehat{t}(e^{\frac{ i 2 \pi k}{M}} z^{1/M} ) = \frac{1}{M} \sum_{k=0}^{M-1} G(e^{i2\pi k} z) \widehat{x}(e^{\frac{ i 2\pi k}{M} } z^{1/M}) = G(z) \frac{1}{M} \sum_{k=0}^{M-1} \widehat{x}(e^{\frac{i2\pi k}{M} }z^{1/M} ) = \\
+  = G(z) \cdot ( \widehat{ \downarrow M} \circ \widehat{x} )(z) = G\cdot (\widehat{\downarrow M \circ x })(z)
+\end{gathered}
+\]
+For all of this in $L^2(\mathbb{R})$ ``time'' domain,
+\[
+(G * (\downarrow M \circ x))(t) = \int_{-\infty}^{\infty} d\tau g(t-\tau) (\downarrow M \circ x)(\tau) = \int_{-\infty}^{\infty} d\tau g(t-\tau) x(M\tau) \overset{ \tau \in \mathbb{Z}}{ \mapsto } \sum_{\tau \in \mathbb{Z}} g(t-\tau) x(M\tau)
+\]
+
+Likewise, 
+\[
+\begin{gathered}
+  \widehat{ \uparrow L } \circ (G\cdot \widehat{x})(z) = \widehat{\uparrow L} \circ G(z)\cdot \widehat{x}(z) = G(z^L) \widehat{x}(z^K) = G(z^L) \cdot (\widehat{ \uparrow L \circ x })(z)
+\end{gathered}
+\]
+and 
+\[
+\begin{gathered}
+  (\uparrow L)\circ G*x(t) = \uparrow L \circ \int_{-\infty}^{\infty} d\tau G(t-\tau) x(\tau) = \int_{-\infty}^{\infty} d\tau G\left( \frac{t}{L} - \tau \right)x(\tau) \overset{ t\in \mathbb{Z} }{ \mapsto } \begin{cases} \sum_{\tau \in \mathbb{Z}} G(m-\tau)x(\tau) & \text{ if } t = Lm, \, m \in \mathbb{Z} \\
+    0 & \text{ otherwise } \end{cases} 
+\end{gathered}
+\]
+\end{proof}
+
+\subsection{On Perfect Reconstruction}\label{SubSec:OnPerfectReconstruction}
+
+Consider this filter bank:
+
+\begin{tikzpicture}
+  \matrix (m) [matrix of math nodes, row sep=2em, column sep=3em, minimum width=1em]
+  {
+     & r_0(z) & \frac{1}{M} \sum_{k=0}^{M-1} r_0\left( e^{i \frac{2\pi k}{M}} z^{1/M} \right)  & t_0(z) & F_0 \cdot t_0(z) & \\
+x(z) &        &                                                                                &        &                  & (F_0\cdot t_0 + F_1\cdot t_1)(z) = x'(z)   \\
+     & r_1(z) & \frac{1}{M} \sum_{k=0}^{M-1}r_1\left( e^{i \frac{2\pi k}{M}}z^{1/M} \right) & t_1(z) &  F_1 \cdot t_1(z)  &      \\ };
+  \path[|->]
+  (m-2-1) edge node [above] {$H_0$} (m-1-2)
+           edge node [below] {$H_1$} (m-3-2)
+  (m-1-2) edge node [above] {$\downarrow M$} (m-1-3) 
+  (m-1-3) edge node [above] {$\uparrow M$} (m-1-4) 
+  (m-1-4) edge node [above] {$F_0$} (m-1-5)         
+  (m-1-5) edge node [auto] {$\oplus$} (m-2-6)
+  (m-3-2) edge node [above] {$\downarrow M$} (m-3-3) 
+  (m-3-3) edge node [above] {$\uparrow M$} (m-3-4)
+  (m-3-4) edge node [above] {$F_1$} (m-3-5)         
+  (m-3-5) edge node [auto] {$\oplus$} (m-2-6) ;
+\end{tikzpicture}
+with
+\[
+\begin{aligned}
+  & r_0(z) = H_0\cdot x(z) \\ 
+  & t_0(z) := \frac{1}{M} \sum_{k=0}^{M-1}r_0(e^{i \frac{2\pi k}{M} } z ) \\ 
+  & F_0\cdot t_0(z) = F_0(z) \cdot t_0(z) = F_0(z) \cdot \frac{1}{M} \sum_{k=0}^{M-1} H_0(e^{i \frac{2\pi k}{M} }z ) \cdot x(e^{i \frac{2\pi k}{M}}z)
+\end{aligned}
+\]
+and likewise for $r_1,t_1,F_1$.  
+
+\begin{theorem}
+  The so-called perfect reconstruction condition is 
+
+\begin{align}
+  & \frac{1}{M} \sum_{m=0}^{M-1} F_m(z) H_m(z) = z^{-\delta} \\ 
+  & \frac{1}{M} \sum_{m=0}^{M-1} F_m(z) H_m(e^{ \frac{i2\pi k}{M} } z) = 0 \quad \, \forall \, k = 1 \dots M-1
+\end{align}
+
+Note that for $M=2$, this becomes
+\[
+\begin{aligned}
+  & \frac{1}{2} \left( F_0(z) H_0(z) + F_1(z)H_1(z) \right) = z^{-\delta}  \\ 
+  &  \frac{1}{2} \left( F_0(z)H_0(-z) + F_1(z)H_1(-z) \right) = 0 
+\end{aligned}
+\]
+\end{theorem}
+
+\begin{proof}
+  \[
+\begin{gathered}
+  \sum_{m=0}^{M-1} F_m(z) \cdot \frac{1}{M} \sum_{k=0}^{M-1} H_m(e^{\frac{i2\pi k}{M} }z ) \cdot x(e^{i\frac{2\pi k}{M} }z ) = \frac{1}{M} \sum_{k=0}^{M-1} \sum_{m=0}^{M-1} F_m(z) H_m(e^{ i \frac{2\pi k}{M} } z) \cdot x(e^{i \frac{2\pi k}{M} } z) = z^{-\delta} x(z) 
+\end{gathered}
+\]
+Then match different $x(e^{i2\pi k/M }z)$ on both sides.  
+\end{proof}
+
+
+
+
+\section{MATLAB Wavelet Toolbox}
+
+SOFTWARE: PyWavelets \footnote{PyWavelets, Python.org, \url{https://pypi.python.org/pypi/PyWavelets/}}
+
+\section{Orthogonal Filter Banks: Paraunitary Matrices; Orthogonality Condition (Condition O) in the Time Domain, Modulation Domain and Polyphase Domain}
+
+READING: Sec 5.1-5.2 \cite{GStrangTNguyen1996}
+
+\subsection{Reading}
+
+\subsubsection{Notes on Sec. 5.2. Orthonormal Filter Banks}\label{SubSubSec:OrthonormalFilterBanks}
+
+Consider filter coefficients $c(k)$, $d(k)$, with \\
+$\begin{aligned} 
+  & \quad \\
+  & c(k) \text{ representing the low pass filter } \\
+  & d(k) \text{ representing the low pass filter } \end{aligned}$
+
+For input $x=x(t) \in L^2(\mathbb{R})$, \\
+recall
+\[
+\begin{aligned}
+  & C:x(t) \mapsto \int_{-\infty}^{\infty} d\tau c(t-\tau) x(\tau) = \sum_{\tau} c(t-\tau) x(\tau) \overset{k = t-\tau}{=} \sum_k c(k) x(t-k) \quad \, t,k \in \mathbb{Z} \\ 
+  & D:x(t) \mapsto \int_{-\infty}^{\infty} d\tau d(t-\tau) x(\tau) = \sum_{\tau} d(t-\tau) x(\tau) \overset{k = t-\tau}{=} \sum_k d(k) x(t-k) \quad \, t,k \in \mathbb{Z} \\ 
+\end{aligned}
+\]
+with $t-k\geq 0$ or equivalently $t-\tau \geq 0$ for a nonzero $c$ or $d$ coefficient being the (time) causality condition. 
+
+The commutative diagram (equivalent to filter bank diagram) is
+
+\begin{tikzpicture}
+  \matrix (m) [matrix of math nodes, row sep=2em, column sep=3em, minimum width=1em]
+  {
+ & Cx(t) & Cx(2t) =y_0(t) & t_0(t) & \widetilde{C}t_0(t) & \\
+x(t) &   &                &        &                     & \widetilde{C}t_0(t) + \widetilde{D}t_1(t)   \\
+ & Dx(t) & Dx(2t) = y_1(t) & t_1(t) &  \widetilde{D}t_1(t) &      \\ };
+  \path[|->]
+  (m-2-1) edge node [above] {$C$} (m-1-2)
+           edge node [below] {$D$} (m-3-2)
+  (m-1-2) edge node [above] {$\downarrow 2$} (m-1-3) 
+  (m-1-3) edge node [above] {$\uparrow 2$} (m-1-4) 
+  (m-1-4) edge node [above] {$\widetilde{C}$} (m-1-5)         
+  (m-1-5) edge node [auto] {$\oplus$} (m-2-6)
+  (m-3-2) edge node [above] {$\downarrow 2$} (m-3-3) 
+  (m-3-3) edge node [above] {$\uparrow 2$} (m-3-4)
+  (m-3-4) edge node [above] {$\widetilde{D}$} (m-3-5)         
+  (m-3-5) edge node [auto] {$\oplus$} (m-2-6) ;
+\end{tikzpicture}
+
+where $\begin{aligned} & t_0(t) = \begin{cases} y_0(t/2) & \text{ if $t$ even } \\
+    0 & \text{ otherwise} \end{cases} \\ 
+& t_1(t) = \begin{cases} y_1(t/2) & \text{ if $t$ even } \\
+    0 & \text{ otherwise} \end{cases} \end{aligned}$
+
+Claim: The claim by Strang and Nguyen\cite{GStrangTNguyen1996} is that in order to achieve $x(t) = \widetilde{C}t_0(t) + \widetilde{C}t_1(t)$, then \\
+$\widetilde{C}$, $\widetilde{D}$ are synthesis filters that are time reversals of the analysis filters:
+\begin{equation}\label{Eq:Orthogonal_timereversal}
+\begin{aligned}
+  & \widetilde{C} = C^T \text{ and } \widetilde{c}(n) = c(-n) \\ 
+  &  \widetilde{D} = D^T \text{ and } \widetilde{d}(n)=  d(-n)
+\end{aligned}
+\end{equation}
+Indeed this is true since
+\[
+\begin{gathered}
+  \sum_{\tau} \widetilde{c}(t-\tau)t_0(\tau) = \sum_{\tau} \widetilde{c}_{t\tau} t_0(\tau) \overset{\widetilde{c}_{t\tau} = (c)^T_{t\tau} }{=} \sum_{\tau} c_{\tau t} t_0(\tau) = \sum_{\tau} c(\tau-t) t_0(\tau) \overset{k=t-\tau} \sum_k c(-k) t_0(t-k)\
+\end{gathered}
+\]
+
+
+\section{Maxflat Filters: Daubechies and Meyer Formulas. Spectral Factorization}
+
+SOFTWARE: \verb|daub.py|
+
+READING: Sec 5.3-5.5 \cite{GStrangTNguyen1996}
+
+Notes on the Handout:
+
+Then Halfband condition is 
+\[
+P(\omega) + P(\omega + \pi) = 2
+\]
+for $P(\omega) \in \mathbb{R}[\omega]$, the set of polynomials of $\omega$.  Look at the first slide of Handout 8.  Notice how $\forall \, \omega \in [0,1]$, the two curves representing $P(\omega) + P(\omega + \pi)$ add up to $2$.  
+
+The slide says we want $P(\omega)$ to be lowpass, which I think means that $P(\omega)$ should ``let low frequencies pass'' i.e. $P(\omega)$ is bigger when frequency $\omega$ is low and smaller (in magnitude) when $\omega$ is ``high'' or big.  
+
+The slide also says we want $p(n)$ to be symmetric: I think that means that $P(\omega)$ should be symmetric about $\omega=0$ so that $P(-\omega)= P(\omega)$ is a symmetry ($\mathbb{Z}/2$, mod-2, symmetry?).  
+
+EY : 20150701 I noticed that  
+\[
+\begin{gathered}
+  P(\omega) = \int_{-\infty}^{\infty} dt p(t) e^{-i \omega t} \\ 
+  P(\omega) + P(\omega + \pi) = \int_{-\infty}^{\infty} dt p(t) (e^{-i\omega t} + e^{-i (\omega +\pi)t} ) \frac{e^{ i \frac{\pi}{2} t} }{ e^{i \pi t/2}} = \int_{-\infty}^{\infty} p(t) e^{-i\omega t} \frac{ \cos{ \left( \frac{ \pi}{2} t \right) }}{e^{ i \pi t/2 } } \\
+\Longrightarrow \mathcal{F}(P(\omega) + P(\omega + \pi) ) = p(t) \cos{\left( \frac{\pi t}{2} \right) } \exp{ (-i ( \omega + \frac{\pi}{2} ) t) } = 2\delta(t)
+\end{gathered}
+\]
+
+\subsection*{Daubechies' Approach}
+
+Let 
+\begin{equation}
+\boxed{  P(\omega) = 2(1-y)^p \sum_{k=0}^{p-1} \binom{ p+k+1}{k} y^k }
+\end{equation}
+with 
+\[
+y = \frac{1-\cos{\omega}}{2} = \left( \frac{1- e^{i\omega} }{2} \right)  \left( \frac{1- e^{-i\omega} }{2} \right)
+\]
+where $y$ symmetric about $\omega =0$
+
+Note that $1-y = \frac{1 + \cos{\omega} }{2}$.
+
+Substituting $z = e^{i \omega}$, so that $y = \left( \frac{1-z}{2} \right) \left( \frac{1 - 1/z}{2} \right) = \frac{1}{4} ( 1 - \frac{1}{z} - z + 1 ) = \frac{1}{4} (2-z-\frac{1}{z})$, and so $(1-y) = \frac{1}{4} (2 + z+\frac{1}{z})$.  
+
+Note some properties of $P(\omega)$:
+
+\begin{itemize}
+\item $P(y=1)=0$ for $y=1$.  Note that $y=1$ when $\omega = \frac{\pi}{2}$.  
+\item $P(\omega)$ of degree $2p-1$ (highest order term is $2y^p \binom{2p}{p-1} y^{p-1} = 2y^{2p-1} \binom{2p}{p-1}$)
+\item Let 
+\begin{equation}\label{Eq:B_p(y)}
+B_p(y) := 1 + py + \frac{ p (p+1)}{2} y^2 + \dots + \binom{ 2p-2}{p-1} y^{p-1} = \sum_{k=0}^{p-1} \binom{ p+k-1}{k} y^k
+\end{equation}
+which is Eq. (5.64) Sec. 5.5 in Strang and Nguyen (1996) \cite{GStrangTNguyen1996}.  There's a typo in Slide 5 of Handout 8 \cite{GStrangKAmaratunga2003}.  
+
+Now note the binomial expansion formula \footnote{Binomial theorem, \emph{wikipedia} \url{https://en.wikipedia.org/wiki/Binomial_theorem}}
+\[
+\frac{1}{(1-y)^p} = \sum_{k=0}^{\infty} \binom{ p + k -1 }{k} y^k = \sum_{k=0}^{p-1} \binom{p+k-1}{k} y^k + \mathcal{O}(y^p)
+\]
+
+Let $\widetilde{P}(y) = 2(1-y)^p B_p(y)$ (EY: 20150701 $\widetilde{P}(y) = P(\omega)$, they're formally equivalent).  
+
+Then 
+\[
+\widetilde{P}(y) = 2(1-y)^p \left( \frac{1}{ (1-y)^p } + O(y^p)  \right) = 2 + O(y^p)
+\]
+Then clearly, \\
+$\widetilde{P}(y=0) = 2(1-0)^p B_p(0) = 2$ \\
+$\widetilde{P}(y=1)=0$  \\
+and the derivatives of order $l=1\dots p-1$ of $\widetilde{P}$ is $0$
+\[
+\widetilde{P}^{(l)}(y=0) \equiv \frac{d^l}{dy^l} \widetilde{P}(y=0) = 0 
+\]
+since, the idea is that 
+\[
+\widetilde{P}(y) = 2(1-y)^p \left( \frac{1}{(1-y)^p} + O(y^p)\right) = 2 + 2(1-y)^p O(y^p) = 2 + \mathcal{O}(y^p)
+\]
+and because of the $(1-y)^p$ factor, 
+\[
+\widetilde{P}^{(l)}(y=1) \equiv \frac{d^l}{dy^l}\widetilde{P}(y=1) = 0
+\]
+\end{itemize}
+
+
+By the $\mathbb{Z}/2$-symmetry, i.e. $P(\omega) = P(-\omega)$, then
+\[
+\Longrightarrow P(z) = P\left( \frac{1}{z} \right)
+\]
+So if $z_0$ is a root of $P(z)$, i.e. $P(z_0) =0$, then $P\left( \frac{1}{z_0} \right) =0$.  
+
+\subsection*{Cepstral Method}
+
+Factor out zeros which lie on unit circle:
+\[
+P(z) = \left( \left( 1 + \frac{1}{z} \right)(1+z)\right)^p Q(z)
+\]
+then factor $Q(z)$ into $Q(z) = R(z)R(\frac{1}{z})$ s.t. \\
+\phantom{then } $R(z)$ has all its zeros inside the unit circle, i.e. $R(z_0)=0$ for $z_0$ s.t. $|z_0|< 1$.  
+\phantom{then }$R(z)$ causal 
+
+Now 
+\[
+\ln{Q(z)} = ln{ R(z)} + \ln{ R(z^{-1}) }
+\]
+
+Apply inverse $z$-transform (i.e. inverse Fourier transform $\mathcal{F}^{-1}$)
+
+\begin{equation}
+\mathcal{F}^{-1}[\ln{ Q(z) }](t) = \mathcal{F}^{-1}[\ln{R(z)}](t) + \mathcal{F}^{-1}[\ln{R(z^{-1})}](t) \equiv q(t) = r(t) + r(-t)
+\end{equation}
+where $\widehat{r}(t) \equiv \mathcal{F}^{-1}[\ln{R(z)}](t)$ is Strang and Amaratunga's notation; my notation is $\begin{aligned}
+& q(t) = \mathcal{F}^{-1}[\ln{ Q(z)}](t) \\ 
+& r(t) = \mathcal{F}^{-1}[\ln{ R(z)}](t)
+\end{aligned}$.  Note that $r(-t) = \mathcal{F}^{-1}[\ln{ R(z^{-1})}](t)$ because remember how inverse Fourier transforms are defined: $\frac{1}{2\pi} \int_{-\pi}^{\pi} d\omega \widehat{r}(\omega) z^{-t} = \frac{1}{2\pi} \int_{-\pi}^{\pi} d\omega \widehat{r}(\omega) e^{-i\omega t} = r(-t)$.  
+
+So $\widehat{r}(t) = 0$ for $t<0$ so that $\widehat{r}(t)$ causal.  (Strang and Amaratunga's notation).  
+
+With $r(t)$ causal, then clearly
+\[
+q(t) = \begin{cases} 0 & \text{ if } t < 0 \\
+ 2r(0) & \text{ if } t = 0 \\
+ r(t) & \text{ if } t > 0 \end{cases}
+\] (using my notation)
+
+$\mathcal{F}^{-1}[\ln{Q(z)}](t) \equiv \widehat{q}(t)$ is the ``complex cepstrum'' of $q(t)$.  (Strang and Amaratunga's notation)
+
+\subsubsection*{Explanation of causal} 
+Consider this very simple example (because I also forgot a lot of complex analysis): Let
+\[
+\begin{aligned}
+& x(z) = \exp{ \left( \frac{1}{ 1 - \frac{z_k}{z} } \right)} = \sum_{j=0}^{\infty} \frac{ \left( \frac{1}{ 1 - \frac{z_k}{z} } \right)^j }{j!}
+& x(z=z_k) = 0 
+\end{aligned}
+\]
+(so $z=z_k$ is a pole of infinite order)
+
+Then for $y(z) = \ln{ x(z)} = \frac{1}{ 1 - \frac{z_k}{z} }$,  \\
+$|y(z_k)|=\infty$ is a singularity at $z=z_k$.  
+
+Now $y(\omega) = \frac{1}{1-z_ke^{-i\omega} }$, so that since $|z_k | < 1$, 
+\[
+\Longrightarrow y(\omega) = \sum_{n=0}^{\infty}(z_k)^n e^{-i\omega n }
+\]
+Taking the inverse Fourier transform, 
+\[
+\mathcal{F}^{-1}[y(\omega)](t) = \frac{1}{2\pi} \int_{-\pi}^{\pi} d\omega e^{i\omega t} \sum_{n=0}^{\infty} (z_k)^n e^{-i \omega n } = \sum_{n=0}^{\infty} \delta(t-n) (z_k)^n = z_k^t
+\]
+So $y(t) = \mathcal{F}^{-1}[y(\omega)](t)$ is causal (I think this causal condition is that $|y(t)| = |z_k|^t < 1$, that the singularities lie inside the unit circle.  
+
+So $y(t) = 0 $ for $t<0$
+
+So analogously, $\widehat{r}(t) = 0$ for $t<0$, so that $\widehat{r}(t) $ causal.  (Strang and Amaratunga's notation)
+
+\subsection*{Algorithm}
+
+The problem is this: for 
+\[
+\begin{gathered}
+  P(\omega) = 2(1-y)^p \sum_{k=0}^{p-1} \binom{p+k+1}{k} y^k = 2\left( \frac{2 + z + \frac{1}{z} }{4} \right)^p \sum_{k=0}^{p-1} \binom{ p+k+1}{k} \left( \frac{2-z -\frac{1}{z} }{4} \right)^k = ((1+z)(1+1/z))^p Q(z)
+\end{gathered}
+\]
+Given $P(\omega)$ (and thus $Q(z)$), \\
+we \textbf{want} to find $H_0(z)$ (i.e. the spectral factorization problem, cf. Slide 8 of Handout 8 \cite{GStrangKAmaratunga2003}) of 
+\[
+P(z) = H_0(z) H_0(z^{-1})
+\]
+\phantom{ we } The product filter for the orthogonal case, $P(z)$, is the polynomial $P(\omega)$ (they're the same thing).  \\
+With $Q(z) = R(z) R\left( \frac{1}{z} \right)$, then $\begin{aligned} & \quad \\
+  & R(z) \text{ is a piece of $H_0(z)$ } \\ 
+  & R\left( \frac{1}{z} \right) \text{ is a piece of $H_0(z^{-1})$ } \end{aligned}$  \\
+So we want to get $H_0(z)$ from $R(z)$.  
+
+Notice that $Q(z)$ is a piece of the binomial expansion of $(1/(1-y)^p)$ and so that can be easily obtained by formula.  
+
+EY : 20150701 At this point you should open up \verb|daub.py| and see the algorithm implemented in Python alongside, in parallel, with the following explanation.  
+
+We're given $Q(z)$, which can be calculated from the formula for $B_p(z)$ (Eq. \ref{Eq:B_p(y)}).  
+
+So first do
+
+\begin{tikzpicture}
+  \matrix (m) [matrix of math nodes, row sep=6em, column sep=8em, minimum width=4em]
+  {
+Q(z) & Q(k) & \ln{Q(k)} & q(t) = \mathcal{F}^{-1}[\ln{ Q(k) }](t)    \\ };
+  \path[|->]
+  (m-1-1) edge node [above] {$z = e^{i \omega } = e^{i \frac{ 2\pi k}{M}}$} (m-1-2)
+  (m-1-2) edge node [above] {$\ln$} (m-1-3)
+  (m-1-3) edge node [above] {$\mathcal{F}^{-1}$} (m-1-4) ;
+\end{tikzpicture}
+
+where $z=e^{i\omega} = e^{i\frac{2\pi k}{M}}$ \, $\forall \, k = 0, 1, \dots M-1$, and $M$ is chosen to be sufficiently large, and 
+\[
+q(t) = \frac{1}{M} \sum_{k=0}^{M-1} \ln{ Q(k)}e^{ i \frac{2\pi k}{M} t} \quad \quad \, \text{ Inverse Discrete Fourier transform }
+\]
+Then, find $r(t)$ using the fact (causality) that 
+\[
+r(t) = \begin{cases} 0 & \text{ if } t < 0 \\
+  \frac{1}{2} q(0) & \text{ if } t = 0 \\
+  q(t) & \text{ if } t > 0 \end{cases}
+\]
+
+Next, 
+
+\begin{tikzpicture}
+  \matrix (m) [matrix of math nodes, row sep=6em, column sep=7em, minimum width=3em]
+  {
+r(t) & \exp \circ \mathcal{F}[ \mathcal{F}^{-1}\ln{ R(k)(t)}] = R(k) & H_0(k) = R(k)(1 - e^{-i \frac{2\pi k}{M} })^p & h_0(t)    \\ };
+  \path[|->]
+  (m-1-1) edge node [above] {$\exp \circ \mathcal{F}$} (m-1-2)
+  (m-1-2) edge node [above] {$ \times (1 + e^{-i \frac{2\pi k}{M}})^p$} (m-1-3)
+  (m-1-3) edge node [above] {$\mathcal{F}^{-1}$} (m-1-4) ;
+\end{tikzpicture}
+
+where $\exp \circ \mathcal{F}[ \mathcal{F}^{-1}\ln{ R(k)(t)}] = \exp{ ( \ln{ R(k) } ) } = R(k)$, \\
+\phantom{where} with the discrete Fourier transform of $r(t)$ given by 
+\[
+\mathcal{F}[r(t)](k) = \sum_{t=0}^{\infty} r(t) e^{ -i \left( \frac{2\pi k}{M} \right) t } \quad \, k = 0,1, \dots M-1
+\] \phantom{where with }(EY: 20150701 I completely disagree with step v of Slide 17 Handout 8 \cite{GStrangKAmaratunga2003}) \\
+\phantom{where} and the multiplication $\times (1 + e^{-i \frac{2\pi k}{M}})^p = \times (1+z^{-1})^p$ gets us $H_0(z)$.   
+
+Finally the inverse discrete Fourier transform $\mathcal{F}^{-1}$ is given by 
+\[
+h_0(t) = \frac{1}{M} \sum_{k=0}^{M-1} H_0(k) e^{ i \frac{2\pi k}{M} t}
+\]  
+
+At this point, one should open up and run \verb|daub.py| and play with the \verb|daub| function.  I think \verb|Nh|, the argument for the function \verb|daub| is $2p$, so try only even values.  Remember, \verb|daub| outputs $h_0(t)$.  
+
+\section{Multiresolution Analysis (MRA): Requirements for MRA; Nested Spaces and Complementary Spaces; Scaling Functions and Wavelets: Handout 9}
+
+READING: Sec 1.5, 6.1 \cite{GStrangTNguyen1996}
+
+Looking at Handout 10, instead, I will following closely Wojtaszczyk (1997)\cite{PWojtaszczyk1997}.  
+Begin with the definition of a \emph{wavelet}:
+\begin{definition}
+ A \textbf{wavelet} is a function $\psi(t) \in L^2(\mathbb{R}$ s.t. if, for 
+\[
+\psi^j_k := 2^{j/2} \psi(2^jx - k) \quad \, j,k \in \mathbb{Z},
+\]
+$\lbrace \psi^j_k \rbrace_{j,k \in \mathbb{Z}}$ is an orthonormal basis in $L^2(\mathbb{R})$, then $\psi(t)$ is a wavelet.
+\end{definition}
+(cf. Def. 2.1. of Wojtaszczyk (1997) \cite{PWojtaszczyk1997})
+
+\subsection{Multiresolution Analysis}
+
+Consider a multiresolution analysis starting here, with these 2 definitions.  
+
+\begin{definition}
+$\forall \, k \in \mathbb{R}$, define \textbf{translation operator} $T_k : L(\mathbb{R}, \mathbb{R}) \to L(\mathbb{R}, \mathbb{R})$ where $L(\mathbb{R}, \mathbb{R})$ is the set of all functions $f$ defined on $\mathbb{R}$  (EY: 20150701 Would this set of functions necessarily be qualified to be all linear functions (which is implied by the notation $L$)? That's my question.) s.t.
+\[
+T_k(f)(x) = f(x-k)
+\]
+\end{definition} (cf. Def. 2.3. of Wojtaszczyk (1997) \cite{PWojtaszczyk1997})
+
+In frequency or wavenumber space, so that for $f(t-k) \in L^2(\mathbb{R})$,
+\[
+\begin{gathered}
+  \mathcal{F}[f(t-k)](\omega) = \int_{-\infty}^{\infty} dt e^{-i\omega t} f(t-k) \overset{ u = t-k}{=} \int_{-\infty}^{\infty} du e^{-i\omega ( u + k) } f(u) = e^{-i \omega k } \widehat{f}(\omega)
+\end{gathered}
+\]
+so that 
+\[
+\widehat{T}_k \widehat{f}(\omega) = e^{-i \omega k } \widehat{f}(\omega)
+\]
+
+\begin{definition}
+  $\forall \, j \in \mathbb{Z}$, define \textbf{dyadic dilation operator } $J^j : L(\mathbb{R}, \mathbb{R}) \to L(\mathbb{R}, \mathbb{R})$ s.t.
+\[
+J^j(f)(x) = f(2^jx)
+\]
+\end{definition} (cf. Def. 2.4. of Wojtaszczyk (1997) \cite{PWojtaszczyk1997})
+
+In frequency or wavenumber space, so that for $f(jt) \in L^2(\mathbb{R})$,
+\[
+\begin{gathered}
+  \mathcal{F}[f(jt)](\omega) = \int_{-\infty}^{\infty} dt e^{-i\omega t} f(jt) = \overset{ u = jt}{=} \int_{-\infty}^{\infty} \frac{du}{j} e^{-i \omega \frac{u}{j} } f(u) = \widehat{f}( \frac{\omega}{j} )
+\end{gathered}
+\]
+so 
+\[
+\widehat{J^j}\widehat{f}(\omega) = \widehat{f}(\frac{\omega}{j} )
+\]
+
+\begin{definition}\label{Def:multiresolutionanalysis}
+The \textbf{multiresolution analysis} is a sequence $(V^j)_{j\in \mathbb{Z}}$ of subspaces of $L^2(\mathbb{R}$, $V^j \subseteq L^2(\mathbb{R})$, \, $\forall \, j \in \mathbb{Z}$ s.t.
+\begin{enumerate}
+\item \[
+\dots \subset V^{-1} \subset V^0 \subset V^1 \subset \dots 
+\]
+\item \[
+\text{span}\lbrace \bigcup_{j\in \mathbb{Z}}V^j \rbrace = L^2(\mathbb{R})
+\]
+\item 
+\[
+\bigcap_{j\in \mathbb{Z}} V^j = \lbrace 0 \rbrace
+\]
+\item 
+\[
+f(x) \in V^j \text{ iff } f(2^{-j}x) \in V^0 \text{ i.e. equivalently } V^j = J^{j}(V^0) \quad \, \forall \, j \in \mathbb{Z}
+\]
+\item \[
+f\in V^0 \text{ iff } f(x-m) \in V^0 \, \forall \, m \in \mathbb{Z} \text{ i.e., equivalently } V^0 = T_n(V^0) \quad \, \forall \, n \in \mathbb{Z}
+\]
+\item $\exists \, \phi \in V^0$ called \textbf{ scaling function } s.t. \\
+$\lbrace \phi(t-m) \rbrace_{m\in \mathbb{Z}}$ is an orthonormal basis in $V^0$ \\
+i.e. equivalently, $\forall \, j \in \mathbb{Z}$, $\lbrace 2^{j/2} \phi(2^jx - k) \rbrace_{k\in \mathbb{Z}}$ is an orthonormal basis in $V^j$
+\end{enumerate}
+\end{definition}
+ (cf. Def. 2.2. of Wojtaszczyk (1997) \cite{PWojtaszczyk1997})
+
+EY : 20150701 Note on notation of $t,\omega$'s and $x,k$'s and indices $n,k,m.n$; I really don't know what's the best notation to remain consistent.  I'll trust that from the context, the meaning is clear.  In the spirit of open-source software (OSS), feel free to edit, copy, delete and make your own versions (and remember to share it!).  I'm interested in wavelet collocation on the physical spatial space $x \in \mathbb{R}^3$, so that's why I'll be writing in terms of position $x$ and wavenumber $k$.  
+
+
+In this easy lemma, that translation and dyadic dilation $T_k$, $2^{j/2}J^j$ is an isometry is a good property to have, ensuring we stay on $L^2(\mathbb{R})$.  
+\begin{lemma}
+  \begin{enumerate}
+  \item $\forall \, k \in \mathbb{R}$, $T_k$ is an isometry on $L^2(\mathbb{R})$ 
+  \item  $\forall \, j \in \mathbb{Z}$, $2^{j/2}J^j$ is an isometry on $L^2(\mathbb{R})$
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  Main idea: change of variable \\
+Recall $\| f\|_2^2 = \int_{-\infty}^{\infty} dx |f(x)|^2$.  
+\[
+\begin{aligned}
+  & \| T_kf \|_2^2 = \int_{-\infty}^{\infty} dx |f(x-k)|^2 = \int_{-\infty}^{\infty} dx |f(x)|^2 = \| f\|_2^2 \\ 
+  &  \| 2^{j/2} J^jf \|_2^2 = \int_{-\infty}^{\infty} dx | 2^{j/2} f(2^j(x)) |^2 = \int_{-\infty}^{\infty} dx |f(x)|^2
+\end{aligned}
+\]
+\end{proof}
+
+\subsection{$W^j$}
+We're going to follow Sec. 2.4  of Wojtaszczyk (1997) \cite{PWojtaszczyk1997}.  
+
+Let subspace $W^j \subseteq L^2(\mathbb{R})$ s.t. $V^j \oplus W^j = V^{j+1}$.  
+
+Now $J^j(V^1) = V^{j+1}$, so then \\
+\phantom{Now} $V^{j+1} = J^j(V^1) = J^j(V^0 \oplus W^0) = J^j(V^0) \oplus J^j(W^0) = V^j \oplus J^j(W^0)$.  \\
+Then $W^j = J^j(W^0)$.  
+
+Since we're given a multiresolution analysis $(V^j)_{j\in \mathbb{Z}}$, by def., (EY: 20150701 I'm not sure about this following step; if you can do this explicitly, let me know)
+\[
+L^2(\mathbb{R}) = \text{span}(\bigcup_{j\in \mathbb{Z}} V^j) = \text{span}(\bigcup_{j\in \mathbb{Z}} J^{-j+1}(V^0) \oplus W^j ) = \oplus \sum_{j\in \mathbb{Z}} W^j
+\]
+\[
+\Longrightarrow L^2(\mathbb{R}) = \oplus \sum_{j\in \mathbb{Z}} W^j
+\]
+i.e. $W^j$'s give an orthogonal decomposition of $L^2(\mathbb{R})$.  So if we get the orthonormal basis of each of the $W^j$'s, then we get an orthogonal decomposition of $L^2(\mathbb{R})$.  
+
+In application of this orthogonal decomposition,
+\[
+L^2(\mathbb{R}) = \underbrace{ V^0\oplus W^0}_{V^1} \oplus W^1 \oplus W^2 \oplus \dots 
+\]
+where $V^0$ is a coarse approximation and $W^j$ is the $j$th level of detail.  
+
+From Theorem 2.20 and Eq. (2.47) of Wojtaszczyk (1997) \cite{PWojtaszczyk1997}, we get this fact:
+\begin{theorem}
+Given a multiresolution analysis, 
+\begin{equation}
+  \psi(x) = \sum_{n \in \mathbb{Z}} \bar{a}_n(-1)^n \phi(2x + n+1) 
+\end{equation} where $\psi \in W^0 = V^1 \ominus V^0$ is a wavelet and 
+\[
+a_n = \int_{-\infty}^{\infty} \phi(\frac{x}{2}) \overline{ \phi(x-n)}dx
+\]
+\end{theorem}
+
+
+\subsection{On the Question of the construction of the scaling function $\phi$}
+
+Start with 
+\begin{equation}
+  V^0 \subset V^1
+\end{equation}
+which is the so-called \textbf{scaling equation} or \emph{refinement equation} aka \emph{two-scale difference equation} or \emph{dilation equation}.  
+
+Using the facts from the definition of a \emph{multiresolution analysis}, Def. \ref{Def:multiresolutionanalysis}, and in particular fact 6, \\
+for scaling function $\phi = \phi(x) \in V^0$, \\
+%then $J^{-1}(\phi) \in V^1$, i.e. \\
+%\phantom{then} $J^{-1}(\phi)(x) = \phi\left( \frac{x}{2} \right) \in V^1$.   
+
+%Apply the Fourier transform (and noting that $\begin{aligned} & \quad \\
+ % u  & =   \frac{x}{2} \\
+ % du & = \frac{dx}{2} \end{aligned}$) 
+%\[
+%\begin{gathered}
+%  \widehat{J^{-1}(\phi)}(k) = \int_{-\infty}^{\infty} dx \phi\left( \frac{x}{2} \right) e^{-ik x} = \int_{-\infty}^{\infty} 2 du \phi(u) e^{-i2k u } = 2\widehat{\phi}(2k)
+%\end{gathered}
+%\]
+since $V^0 \subset V^1$ and $\lbrace 2^{1/2}\phi(2x - n) \rbrace_{n\in \mathbb{Z}}$ is an orthonormal basis in $V^1$, then $\phi \in V^0 \subset V^1$ is of the form
+\[
+\phi(x) = \sum_{n\in \mathbb{Z}} a_n 2^{1/2} \phi(2x-n)
+\]
+Take the Fourier transform of $\phi(x)$:
+\[
+\begin{gathered}
+  \widehat{\phi}(k) = \int_{-\infty}^{\infty} dx \phi(x) e^{-ikx} = \int_{-\infty}^{\infty} dx \sum_{n \in \mathbb{Z}} a_n 2^{1/2} \phi(2x-n) e^{-ikx} = \sum_{n\in \mathbb{Z}} 2^{1/2} a_n \int_{-\infty} du \phi(u) e^{-ik (\frac{u+n}{2}  ) }= \\
+  = \sum_{n\in \mathbb{Z}}2^{1/2} a_n e^{-ik \frac{n}{2} }\widehat{\phi}\left( \frac{k}{2} \right) = m_{\phi}\left( \frac{k}{2} \right) \widehat{\phi}\left( \frac{k}{2} \right)
+\end{gathered}
+\]
+using the $u$-substitution $\begin{aligned} & \quad \\
+  u  & = 2x - n \\
+  du & = 2dx \\
+  x & = \frac{u+n}{2} \end{aligned}$ and where $m\left( \frac{k}{2} \right) \equiv m_{\phi}\left( \frac{k}{2} \right) := \sum_{n\in \mathbb{Z}}2^{1/2} a_n e^{-i \frac{k}{2} n }$.  
+
+Notice that $\widehat{\phi}(k) = m_{\phi}(k/2)\widehat{\phi}(k/2)$.  We have a recursion relation.  By induction, for $N \in \mathbb{Z}$ (with the feeling that $N$ is large), then 
+\[
+\widehat{\phi}(k) = \prod_{j=1}^N m_{\phi}\left( \frac{k}{2^j} \right) \widehat{\phi}\left( \frac{k}{2^N}  \right)
+\]
+
+So given a sequence of numbers $(a_k)_{k\in \mathbb{Z}}$ (which gives us $m_{\phi}$), $a_k \in \mathbb{R}$, one can obtain 
+\[
+\theta(k) := \prod_{j=1}^{\infty} m\left( \frac{k}{2^j} \right)
+\]
+and construct $\widehat{\phi}(k)$.  
+
+Indeed, for the construction of an appropriate multiresolution analysis, \\
+\phantom{Indeed, for} it's sufficient to construct a multiresolution analysis with a compactly supported scaling function $\phi$ (and then we'll get wavelets), from Theorem 4.1 of Wojtaszczyk (1997)\cite{PWojtaszczyk1997}, which I'll recap here:
+
+\begin{theorem}
+  Suppose 
+\[
+m(k) = \sum_{n = T}^S a_n e^{-i kn}
+\]
+where $m(k)$, a trigonometric polynomial, satisfies the following properties:
+\[
+\begin{aligned}
+  |m(k)|^2 + |m(k+\pi)|^2 & = 1  \quad \, \forall \, k \in \mathbb{R} \\ 
+  m(0) & = 1 \\ 
+  m(k) & \neq 0 \quad \, \forall \, k \in \left[ \frac{-\pi}{2}, \frac{\pi}{2} \right]
+\end{aligned}
+\]
+
+Then the infinite product
+\[
+\theta(k) = \prod_{j=1}^{\infty} m\left( \frac{k}{2^j} \right)
+\]
+converges almost uniformly.   \\
+Thus, $\theta(k)$ continuous. \\
+Moreover, $\theta(k) \in L^2(\mathbb{R})$. 
+
+Function $\phi$, given by $\widehat{\phi} = \frac{1}{\sqrt{2\pi}} \theta$, has compact support on $[T,S]$ and is a \emph{scaling function} of a \emph{multiresolution analysis}. 
+
+Formula 
+\[
+\psi(x) = 2 \sum_{n=T}^S \bar{a}_n (-1)^n \phi(2x + n +1)
+\]
+gives a compactly supported wavelet with compact support $\text{supp}\psi \subset \left[ \frac{T-S-1}{2} , \frac{S-T-1}{2} \right]$.  
+\end{theorem}cf. Theorem 4.1, Wojtaszczyk (1997)\cite{PWojtaszczyk1997}
+Notice that this theorem gives us desirable properties and a wavelet.  
+
+EY : 20150701 the properties for $m(k)$ look very familiar to what was discussed about the Daubechies filter coefficients: are they related?
+
+EY : 20150701 Note, I'm not trying to cuff the question of the construction of a compactly supported scaling function here by referencing and copying directly from Wojtaszczyk (1997)\cite{PWojtaszczyk1997}.  Wojtaszczyk has the answer given by Theorem 4.1 and it is what it is.  We're not trying to reinvent the wheel here in these notes or i.e. suffer from  ``Not Invented Here''-syndrome. 
+
+Otherwise, if you think that including the full proof here is valuable, let me know; I'll type it up though it's essentially a copy of the proof in Wojtaszczyk (1997)\cite{PWojtaszczyk1997} with my notation, or I'd invite you to copy, paste, and edit the LaTeX and add it yourself (and remember to share!).  
+
+Ingrid Daubachies original 10 lectures on wavelets is also a great resource I'm trying to look into; she neatly summarizes in a theorem the take away facts from this entire section in Theorem 6.3.6. \cite{IDaubechies1992}:
+\begin{theorem}
+Suppose $m_0$ is a trigonometric polynomial s.t. 
+\[
+\begin{aligned}
+ |m_0(k)|^2 + |m_0(k + \pi)|^2  & = 1 \\  
+m_0(0)  & = 1 
+\end{aligned}
+\]
+Define $\phi, \psi$ by 
+\[
+\begin{aligned}
+  & \widehat{\phi}(k) = \frac{1}{ (2\pi)^{1/2}} \prod_{j=1}^{\infty} m_0\left( \frac{k}{2^j} \right) \\
+  &  \widehat{\psi}(k) = e^{\frac{-ik}{2} } \overline{m_0\left(\frac{k}{2} + \pi \right)} \widehat{\phi}\left( \frac{k}{2} \right)
+\end{aligned}
+\]
+Then $\phi,\psi$ compactly supported $L^2$-functions s.t. 
+\[
+\begin{gathered}
+\phi(x) = \sqrt{2} \sum_n h_n\phi(2x-n) \\
+\psi(x) = \sqrt{2} \sum_n (-1)^n h_{-n+1} \phi(2x-n) \end{gathered}
+\]
+where $h_n$ determined by $m_0$, via
+\[
+m_0(k) = \frac{1}{\sqrt{2}} \sum_n h_n e^{-{ink} }
+\]
+\[
+\psi^j_k(x) = \frac{1}{2^{j/2}} \psi(\frac{x}{2^j} - k ) , \quad \, j,k \in \mathbb{Z}
+\]
+$\psi^j_k(x)$ tight frame for $L^2(\mathbb{R})$ with frame constant $1$.  
+
+This tight frame is an orthonormal basis iff for $m_0$, $\exists \,$ compact set $K$, congruent to $[-\pi,\pi]$ modulo $2\pi$, containing a neighborhood of $0$, so that 
+\[
+\inf_{n>0} \inf_{k \in K} | m_0(2^{-n}k) | > 0 
+\]
+
+\end{theorem}
+I think Daubachies' convention is for $j$ to actually be $-j$ in our understanding of $V^j \subset V^{j+1}$ cf. Chapter 6, Sec. 6.1 of Strang and Nguyen (1996) \cite{GStrangTNguyen1996}.  So the (important) orthonormal bases for the $W^j$ subspaces is 
+\begin{equation}
+\psi^j_k(x) = 2^{j/2} \psi(2^jx - k ) \quad \, j,k \in \mathbb{Z}
+\end{equation}
+
+
+\section{Refinement Equation: Interative and Recursive Solution Techniques; Infinite Product Formula; Filter Bank Approach for Computing Scaling Functions and Wavelets: Handout 10}
+
+SOFTWARE: \verb|cython| for \verb|pyWavelets| package, \verb|pyWavelets| package, \footnote{Discrete Wavelet Transform in Python \url{http://www.pybytes.com/pywavelets/}}
+
+READING: Sec 6.2-6.4 \cite{GStrangTNguyen1996}
+
+Yes, the previous section was mostly theory, but it will payoff dividends here.  
+
+Slides 5-8 of Handout 10 \cite{GStrangKAmaratunga2003} are essentially an application of the multiresolution analysis definition, Def. \ref{Def:multiresolutionanalysis}, but on a discrete grid $x \in \mathbb{Z}$.  
+
+For $\phi^0 \in V^0$, with orthogonal basis $\lbrace \phi^0(x-n) \rbrace_{n\in \mathbb{Z}}$ for $V^0$, then
+\[
+\phi^0(x) = \sum_{n\in \mathbb{Z} } a_n^0 \phi^0(x-n)
+\]
+It's unclear to me from Handout 10 \cite{GStrangKAmaratunga2003} which quantities do we know and don't know, but I think we want to find $a_n^0$ given the values of scaling function $\phi$ at various points $x$, and vice versa.  
+
+Discretize $x\in \mathbb{Z}$: $x \in \mathbb{Z} \to x\in \mathbb{Z}$.  So
+\[
+\phi^0(x) = \sum_{n \in \mathbb{Z}} a_n^0 \phi^0(x-n) \overset{u = x-n}{=} \sum_{u\in \mathbb{Z}} a^0_{x-u} \phi^0(u)
+\]
+Solve for this matrix equation now.  
+
+If $x$ is treated as time $t$, then (time) causality condition is clear: for \\
+$\phi(t)= \sum_{u\in \mathbb{Z}} a_{t-u}^0 \phi(u)$ \\
+then the causality condition is $a^0_{t-u} = 0 $ if $t-u < 0$.  
+
+EY : 20150701 My question is what happens when $x$ is treated as position in physical space? What is the physical analogue to time causality?  Locality? 
+
+Now for $J^j(V^0) = V^j$, i.e. orthonormal basis for $V^j$ is $\lbrace 2^{j/2}\phi(2^jx - n) \rbrace$, then for \\
+$\begin{aligned} 
+  & \phi^j(x) \in V^j \\
+  & \phi^j(x) = \sum_{n\in \mathbb{Z}} a_n^j2^{j/2} \phi^0(2^jx- n) \end{aligned}$
+
+Suppose $j=1$.  Suppose $x = \frac{2m+1}{2}$, $x\in \mathbb{Z}/2$ (half integers).  
+\[
+\phi^1(x=\frac{2m+1}{2} ) = 2^{1/2} \sum_{n\in \mathbb{Z}} a_n^1 \phi^0(2m+1-n) \overset{u = 2m+1 -n }{=} 2^{1/2} \sum_{u \in \mathbb{Z}} a^1_{2m+1-u} \phi^0(u)
+\]
+Treating $x$ as time $t$, the causality condition is $\frac{2m+1}{2} \geq u$ or $m+\frac{1}{2} \geq u$.  
+
+\subsection*{Scaling Relation and Wavelet Equation in Frequency Domain}
+cf. Slides 9-17. \cite{GStrangKAmaratunga2003}
+
+I think this is an application of Theorem 6.3.6. from Ingrid Daubachies \cite{IDaubechies1992}.  It'd be nice to see that proof from \cite{IDaubechies1992} in comparison to the presentation in Slides 9-17 \cite{GStrangKAmaratunga2003}
+
+\subsection*{Software} 
+
+I installed \verb|cython| and \verb|PyWavelets| packages.  For the Mac OSX, at the command prompt of Terminal on an administrator account, I installed both with \verb|pip| (it's an improvement on \verb|easy_install| \footnote{``Why use pip over easy install?'' stackoverflow \url{http://stackoverflow.com/questions/3220404/why-use-pip-over-easy-install}}.  By the way, I find that \verb|pip| makes installation very easy and robust (easier than \verb|easy_install|, heh), so I highly recommend that if you don't have pip, install pip.   
+
+%\footnote{``Why use pip over \verb|easy_install|?'' %stackoverflow \url{http://stackoverflow.com/questions/3220404/why-use-pip-over-easy-install}}.
+%}
+
+The website for PyWavelets \url{http://www.pybytes.com/pywavelets/#install} says that PyWavelets is written in Python, Cython, and C and features over 70 built-in wavelet filters, and that results are compatible with Matlab's Wavelet Toolbox.  And PyWavelets is open source (MIT licenese)! So it looks very promising.  We're going to use it as much as possible.  
+
+Documentation for PyWavelets is at the bottom, under Contents, and one should look at the \href{http://www.pybytes.com/pywavelets/ref/index.html}{API Reference}.  
+
+\subsubsection*{Example 6: Generation of orthogonal scaling functions and wavelets.}
+
+Open up \verb|example6.py|.  Notice the use of \verb|daub.py| again.  So \verb|daub| function gives us the low pass filter coefficients (in the so-called filter bank form).  
+
+Opening up \verb|example6.py|, you'll see that the use of function \verb|upcoef| for the inverse DWT (Discrete Wavelet Transform).  It would be a good time to learn about the function \verb|upcoef| from the documentation at pybytes \footnote{PyWavelets API Reference \url{http://www.pybytes.com/pywavelets/ref/idwt-inverse-discrete-wavelet-transform.html}}.  In the MIT OCW 18.327 material, \verb|upcoef| wasn't discussed or documented on its usage and in this notes, I want to improve on that by explicitly discussing the use of functions in Python (same goes with Matlab/GNU Octave) in application in relation to what's learned in the notes here and Handout.  
+
+Notice the use of \verb|upcoef| in \verb|example6.m| and the requirement to input in a synthesis lowpass filter and synthesis highpass filter, \verb|f0, f1|, respectively, in Matlab.  The wavelet can be specified in terms of orthogonal filter banks.  I think the explanation can be found in Sec. 6.2. of Nguyen and Strang \cite{GStrangTNguyen1996} or look at my notes on the reading that goes along this Handout 10, Subsection \ref{SubS:Readings_Handout10}.  
+
+In PyWavelet, for a custom wavelet, one must specify the entire filter bank with a lowpass decomposition, highpass decomposition, lowpass reconstruction and highpass reconstruction (i.e. synthesis).  Given the lowpass reconstruction and highpass reconstruction, you can get the lowpass decomposition and highpass decomposition because the coefficients are simply time-reversed.  
+
+Given the lowpass reconstruction and highpass reconstruction, \verb|Lo_R|, \verb|Hi_R| in Matlab notation 
+\footnote{upcoef, Mathworks Documentation \url{http://www.mathworks.com/help/wavelet/ref/upcoef.html}}, \verb|rec_lo|, \verb|rec_hi| in PyWavelet notation 
+\footnote{``Using custom wavelets,'' PyWavelets, \url{http://www.pybytes.com/pywavelets/ref/wavelets.html}}, to obtain the lowpass decomposition filter and highpass decomposition filter, then recall Eq. \ref{Eq:Orthogonal_timereversal} and the discussion there.  
+
+With $\begin{aligned} & \widetilde{c}(n) = c(-n) \\
+  & \widetilde{d}(n) = d(-n) \end{aligned}$, then this boils down to \emph{reversing the order of the coefficients} to get $c,d$'s from $\widetilde{c},\widetilde{d}$'s.  
+
+However, once the PyWavelet Object is constructed, instead of using \verb|upcoef|, what you want to use is the function \emph{wavefun}.  It ``calculates approximations of scaling function (phi) and wavelet function (psi) at the given level of refinement.'' \footnote{Approximating wavelet and scaling functions - Wavelet wavefun, PyWavelets \url{http://www.pybytes.com/pywavelets/ref/wavelets.html}}. It directly gives you the scaling function and wavelet you want.  
+
+EY : 20150703 My question is about the scaling.  I would like some clarification in \verb|example6.m| on the scaling by $M$ of the \verb|phi| done after the inverse DWT.  It's unclear what choice of scaling Matlab uses.  And how does that compare with the scaling that's done in PyWavelets?  
+
+\subsubsection*{Example 7: Generation of biorthogonal scaling functions and wavelets.}
+
+\verb|biorwavf| is a Biorthogonal spline wavelet filter in Matlab.  
+
+In PyWavelets, the wavelet filters coefficients and the corresponding lowpass and highpass decomposition filters and lowpass and highpass reconstruction filters can be accessed directly by creating a Wavelet object.
+
+\subsection{Readings}\label{SubS:Readings_Handout10}
+
+cf. Chapter 6 ``Multiresolution'', Sec. 6.1. The Idea of Multiresolution \cite{GStrangTNguyen1996}.  
+Let 
+\[
+\phi(t) = 2^{1/2} \sum_k c(k) \phi(2t-k) \in L^2(\mathbb{R})
+\]
+Let $\phi(t)$ have compact support on $[2t-N,2t]$ \, $\forall \, t$, i.e. only $c(0), c(1), \dots c(N)$ nonzero.  
+
+Note that $c(k)$'s are called \emph{approximation coefficients}, which is handy to remember when using Matlab or PyWavelets as that's what they are referred to by, there.  
+
+Since 
+\[
+\langle \phi(t) , \phi(t-m) \rangle = \int_{-\infty}^{\infty}dt \phi(t) \phi(t-m) = \delta(m)
+\]
+then
+\[
+\sum_k c(k)c(k-2m) = \delta(m)
+\]
+Also, recall that $\downarrow M : x(t) \mapsto x(Mt)$, which is part of the ``analysis'' or decomposition filter bank.  
+
+Then coefficients $c(k)$ ``go into an orthonormal filter bank.'' (cf. Sec. 6.1 \cite{GStrangTNguyen1996}).  
+
+$c(k)$ is involved in decomposition.  
+
+The key relations for scaling function $\phi(t) \in V^1$ and wavelet $\phi(t) \in W^0 \subset V^1$ are the following (see previous theorems, such as Thm. 6.3.6 of Daubachies \cite{IDaubechies1992}):
+\begin{equation}
+\begin{aligned}
+  & \phi(t) = \sqrt{2} \sum_n h_n \phi(2t-n) \\ 
+  & \psi(t) = \sqrt{2} \sum_n (-1)^n h_{-n+1} \phi(2t-n)
+\end{aligned}
+\end{equation}
+
+If we denote the coefficients for a wavelet $d=d(k)$ (note that they are also called \emph{detail coefficients}, from the high-pass filter, because Matlab and PyWavelets both call these $d$'s detail coefficients) in
+\[
+\psi(t) = \sqrt{2} \sum_k d(k) \phi(2t-k) \in W^1 \subset V^1
+\]
+Then we can conclude that the relationship between coefficients for $\phi$ and coefficients for $\psi$ is the following:
+\[
+c(n) = d(-n+1)(-1)^n  \quad \, \forall n \in \mathbb{Z}
+\]
+
+cf. Sec. 6.2. ``Wavelets from Filters'' \cite{GStrangTNguyen1996}
+
+The claim is this: \\
+$c(0) \dots c(N)$ constitute a  low pass filter that determines the scaling function $\phi(t) = \sum_n 2^{1/2}c(n) \phi(2t-n) \in V^0 \subset V^1$ \\
+$d(0) \dots d(N)$ constitute a high pass filter that determines the wavelets  $\psi(t) = \sum_n 2^{1/2}d(n) \phi(2t-n) \in W^0 \subset V^1$ \\
+
+Now consider $f^j(t) = \sum_k a_k^j \phi_k^j(t) \in V^j$\\
+\phantom{Now consider} $f(t) = \sum_{j,k} b_k^j \psi_k^j(t) \in W^j$ \\
+and now construct $\phi(t)$ using $V^0 \subset V^1$ the so-called ``dilation equation.''
+
+For $V^0 \oplus W^0$  with orthonormal bases, respectively, \\
+$\lbrace \phi(t-k) \rbrace_{k \in \mathbb{Z}}$, \quad \, $\lbrace \psi_k^0(t) = \psi(t-k) \rbrace_{k\in \mathbb{Z}}$, then
+\[
+\begin{gathered}
+  \sum a_k^1 \phi_k^1(t) = \sum a^0_k \phi^0_k(t) + \sum_k b_k^0 \psi_k^0(t) := \sum_k a_k^0 \phi(t-k) + \sum_k b_k^0 \psi(t-k) \\ 
+  \begin{aligned}
+    & \phi(t-k) = \sum_n 2^{1/2} c(n) \phi(2(t-k)-n) \overset{n=l-2k}{=} \sum_n c(l-2k)\phi^1_l \\ 
+    &  \psi(t-k) = \sum_n 2^{1/2}d(n) \phi(2(t-k)-n) \overset{n=l-2k}{=} \sum_n d(l-2k) \phi^1_l
+\end{aligned} \\ 
+\begin{aligned}
+  & a_k^0 = \langle f^1, \phi(t-k) \rangle = \sum c(l-2k) a_l^1 \\ 
+  &  b_k^0 = \langle f^1, \psi(t-k) \rangle = \sum d(l-2k) a_l^1
+\end{aligned}
+\end{gathered}
+\]
+
+
+
+
+\section{Project Brief}
+
+EY : 20150701 I'm partial to wavelet collocation methods on an adaptive grid (for the spatial space) for computational fluid dynamics (CFD), but it would be neat to include links, abstracts, and possible project proposals here of past and future projects involving wavelets and filter banks.   
+
+However, inspired by Kyle Kastner's post on ``Wavelets'' \footnote{Kyle Kastner, ``Wavelets'', \emph{Garbage In, Garbage Out}, \url{http://kastnerkyle.github.io/blog/2014/04/17/wavelets/}}, there are two projects that was fun for me to scratch the surface on and I'd be happy to see others pick up on.
+
+\subsection{Sunspots}
+
+
+SOFTWARE: in \verb|tools|, 
+\begin{itemize}
+\item \verb|sunspots_get.py|
+\item \verb|sunspots.py|
+\end{itemize}
+
+\begin{figure}[h!]
+ \caption{Source: \href{http://science.nasa.gov/media/medialibrary/2008/09/30/30sep_blankyear_resources/midi512_blank_2001.gif}{NASA}}
+ \centering
+   \includegraphics[width=0.3\textwidth]{midi512_blank_2001.png}
+\end{figure}
+
+
+We can do a discrete wavelet transform on the number of sunspots observed over the years.  The Royal Observatory of Belgium in Brussels maintains updated data on worldwide observations of sunspot number\footnote{Source: WDC-SILSO, Royal Observatory of Belgium, Brussels, \url{http://sidc.be/silso/datafiles}}.  Much credit goes to them for doing this service.  
+
+\verb|sunspots_get.py| gets you the latest data from SILSO on the observed sunspot number directly from SILSO and puts the data in a Python pickle so you could save it locally on your hard drive (and so you don't have to keep requesting and overloading the website).  
+
+Now, I've used requests, BeautifulSoup, and Python 2's urlparse to do what's called ``webscraping'' of the SILSO website - that is automating going to the website, reading in the html code, and extracting from the website the desired links to the data.  Of course, you can manually click on the website and download the data, but I wanted to illustrate how web scraping can be done because you can imagine the usefulness of automating data collection when dealing with a large amount.  
+
+\verb|sunspots.py| does the actual Discrete Wavelet Transform (DWT) on the sunspot data for daily and mean monthly observations, and plot them.  While I used the single level DWT using Daubechies 2 and Daubechies 16 wavelets, there are 3 directions I see that can be fun to explore:
+\begin{itemize}
+  \item Try different types of wavelets from the \verb|wavelist()| wavelet list of PyWavelets, such as 'haar', 'symlet', etc.
+  \item Try different levels of resolution with \verb|wavedec|
+  \item Get the ``peaks'' of the wavelet decomposition (I tried \verb|scipy.signal.find_peaks_cwt| from scipy.signal but I need some work as it's not working for me).  
+\end{itemize}
+
+EY : But as of 20150704, I was able to obtain these plots of the single-level wavelet decomposition of the observed sunspot number over 200 to 300 years, Fig. \ref{Fig:sunspots_fig_1},\ref{Fig:sunspots_fig_2}, \ref{Fig:sunspots_fig_3}.
+
+\subsection{Image Compression and Reconstruction}
+
+SOFTWARE: \verb|kompresni.py|
+
+\begin{figure}[h!]\label{Fig:sunspots_fig_1}
+ \centering
+   \includegraphics[width=1.2\textwidth]{sunspots_fig_1.png}
+\end{figure}
+
+\begin{figure}[h!]\label{Fig:sunspots_fig_2}
+ \centering
+   \includegraphics[width=1.0\textwidth]{sunspots_fig_2.png}
+\end{figure}
+
+\begin{figure}[h!]\label{Fig:sunspots_fig_3}
+% \caption{Source: \href{http://science.nasa.gov/media/medialibrary/2008/09/30/30sep_blankyear_resources/midi512_blank_2001.gif}{NASA}}
+%\caption{}
+ \centering
+   \includegraphics[width=1.0\textwidth]{sunspots_fig_3.png}
+\end{figure}
+
+
+\subsection{Image compression and reconstruction}
+
+SOFTWARE: in tools, \verb|kompresni.py|
+
+PyWavelet, with 2-dimensional Wavelet packets (methods), offers the opportunity to do some image compression and reconstruction.\footnote{PyWavelets, API Reference, \url{http://www.pybytes.com/pywavelets/ref/2d-dwt-and-idwt.html}}. with single level \verb|dwt2|, \verb|idwt2|, and 2D multilevel decomposition and reconstruction with \verb|wavedec2| and \verb|waverec2|.  
+
+Note that I was using \verb|scipy|'s misc or ndimage for reading in the image and \verb|matplotlib.pyplot|'s imshow to plot it out.  
+
+EY : 20150704 right now, I'm having trouble with the code \footnote{ernestyalumni, github, \url{https://github.com/ernestyalumni/18-327-wavelets-filter-banks/blob/master/tools/kompresni.py}} in terms of using index slicing to put together a 3-dimensional numpy array to get back the image after doing the DWT2 on each of the (3) colors, RGB (red,green,blue).  So I need help there.  It's outputting out right now multiple images after doing dwt2.  
+
+Nevertheless, here's what I obtained so far as plots.  Note that it's tradition to use the image of Lena S\"{o}derberg, but you should have fun and use an image you like (and use appropriately).  
+
+%\begin{figure}[h!]
+%  \begin{subfigure}[b]
+%    \includegraphics{IS61836062.png}
+%\end{subfigure}
+ 
+\begin{figure}[h!]
+  \centering
+  \begin{minipage}{.5\textwidth}
+    \centering
+    \includegraphics[width=0.73\textwidth]{IS61836062.png}
+    \caption{Original image}
+\end{minipage}%
+  \begin{minipage}{.5\textwidth}
+    \centering
+    \includegraphics[width=1.43\textwidth]{kompresni_fig_4.png}
+\end{minipage}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\begin{minipage}{.5\textwidth}
+  \centering
+    \includegraphics[width=1.43\textwidth]{kompresni_fig_8.png}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+  \centering     
+    \includegraphics[width=1.43\textwidth]{kompresni_fig_9.png}
+\end{minipage}
+\end{figure}
+
+
+
+\section{Orthogonal Wavelet Bases: Connection to Orthogonal Filters; Orthogonality in the Frequency Domain. Biorthogonal Wavelet Bases}
+
+\section{Mallat Pyramid Algorithm; Handout 12}\label{Sec:MallatPyramid}
+
+READING: Sec 1.6, 6.2 \cite{GStrangTNguyen1996}
+
+Consider 
+\[
+\begin{aligned}
+& \phi^{j+1}(t) \in V^{j+1} = V^j \oplus W^j \\
+& \phi^{j+1}(t) = \sum_k c_k^{j+1} \phi_k^{j+1}(t) = \sum_k c_k^j \phi_k^j(t) + \sum_k d_k^j \psi_k^j(t) \end{aligned}
+\]
+which we can write, using the orthonormal basis $\lbrace \phi_k^j(t) = 2^{j/2}\phi(2^jt-k) \rbrace_{k\in \mathcal{K}}$ for $V^j$.  $\lbrace \psi^j_k \rbrace_{k\in \mathcal{K}}$ is the orthonormal basis for $W^j$. 
+
+For the scaling function $\phi(t) \in V^0$, since $V^0 \subset V^1$, then we can write $\phi(t)$ as 
+\begin{equation}\label{Eq:scalingfunctioninV^1}
+\phi(t) = \sum_l h_0(l) 2^{1/2} \phi(2t-l)
+\end{equation}
+
+Now, by theorem (such as Daubechies Thm. 6.3.6)
+\begin{equation}\label{Eq:psiinV^1}
+\psi(t) = \sum_l(-1)^l h_0(-l+1)2^{1/2} \phi(2t-l) = \sum_l h_1(l) 2^{1/2} \phi(2t-l)
+\end{equation}
+So
+\[
+\begin{aligned}
+  & \phi^j_k(t) = 2^{j/2}\phi(2^jt - k ) = 2^{j/2} \sum_l h_0(l)2^{1/2} \phi(2^{j+1}t-2k-l) = \sum_l h_0(l) \phi^{j+1}_{2k+l}(t) \\ 
+  & \psi_k^j(t) = 2^{j/2}\psi(2^jt-k) = 2^{j/2}\sum_l h_1(l) 2^{1/2}\phi(2^{j+1}t - 2k-l) = \sum_l h_1(l) \phi^{j+1}_{2k+l}(t) 
+\end{aligned}
+\]
+Then
+\begin{equation}\label{Eq:c^j_kd^j_k00}
+\begin{aligned}
+&  c^j_k = \langle \phi^{j+1}(t), \phi^j_k(t) \rangle = \int_{-\infty}^{\infty} dt \overline{\phi}^{j+1}(t) \phi^j_k(t) = \int_{-\infty}^{\infty} dt \overline{\phi}^{j+1}(t) \sum_l h_0(l) \phi^{j+1}_{2k+l}(t) = \sum_l h_0(l) c^{j+1}_{2k+l } \overset{u=2k+l}{=} \sum_u h_0(u-2k) c_u^{j+1} \\ 
+& d_k^j = \langle \phi^{j+1}(t), \psi_k^j(t) \rangle = \int_{-\infty}^{\infty} dt \overline{\phi}^{j+1}(t) \sum_l h_1(l) \phi^{j+1}_{2k+l}(t) = \sum_l h_1(l) c^{j+1}_{2k+l} = \sum_u h_1(u-2k) c^{j+1}_u
+\end{aligned}
+\end{equation}
+
+Thus,
+\begin{equation}\label{Eq:c^{j+1}_k00}
+\begin{gathered}
+  \langle \phi^{j+1}(t), \phi^{j+1}_k(t) \rangle = c_k^{j+1} = \sum_{k'}c_{k'}^j \langle \phi^j_{k'}(t) , \phi^{j+1}_k(t) \rangle + \sum_{k'} d^j_{k'} \langle \psi_{k'}^j(t), \phi^{j+1}_k(t) \rangle = \sum_{k'} c_{k'}^j h_0(k-2k') + \sum_{k'} d_{k'}^jh_1(k-2k')
+\end{gathered}
+\end{equation}
+where 
+\[
+\begin{aligned}
+  & \langle \phi^j_{k'}(t), \phi_k^{j+1}(t) \rangle = \sum_l h_0(l) \delta(2k' + l-k) = h_0(k-2k') \\ 
+  & \langle \psi^j_{k'}(t), \phi^{j+1}_k(t) \rangle =\sum_l h_1(l) \delta(2k'+l -k) = h_1(k-2k')
+\end{aligned}
+\]
+
+EY : 20150707 The coefficients $c_k^j$'s $d_k^j$'s live in a different space from $V^j$s, $W^j$s.  These coefficients obey a different algebra than the algebra of the scaling function and wavelets.  
+
+$\forall \, j \in \mathbb{Z}$, $V^j$ is a $k$-algebra.  $V^j$ is a ring with addition and multiplication being convolution.  $k$ is a commutative ring with addition and multiplication (in the usual sense, like scalar addition and scalar multiplication).  But $k$ has also addition and multiplication on its ``indices.''  
+
+\begin{proposition}
+$\forall \, j \in \mathbb{Z}$, $V^j$ is a $L^2(\mathbb{R})$-module.  
+\end{proposition}
+
+\begin{proof}
+  Sketch of a proof: $\forall \, f^j, g^j, p^j \in V^j$, then under addition, it is (additive) group \\ so that $f^j + g^j \in V^j$ \\
+$f^j + g^j = g^j + f^j$ (commutativity) \\
+$(f^j + g^j) + p^j = f^j + (g^j + p^j)$ (associativity) \\
+
+and it is equipped with multiplication being the convolution and this multplication is commutative
+\[
+(h*f^j)(t) = \int_{-\infty}^{\infty} d\tau h(t-\tau)f^j(\tau) = (f^j*h)(t)
+\]
+
+\end{proof}
+
+\begin{proposition}
+$V^j$ also is equipped as a $k^j$-module over $k^j$ which itself a $k$-algebra of coefficients $c^j_k$s, $d^j_k$s.  
+\end{proposition}
+
+You can do addition and multiplication in $k^j$ with $k^j$ as a ring: 
+\[
+c^j_k + d^j_k
+\]
+\[
+h_0(k-2m)c_m^j
+\]
+and you can also do addition and multiplication on the ``indicies'' as a commutative ring (but with no distributivity):
+\[
+\begin{aligned}
+  & c^j_{k+l} = c^j_{l+k} \\ 
+  & c^j_{(MN)k} = c^j{(NMk)}
+\end{aligned}
+\]
+So $V^{j+1}$ is a $k^{j+1}$-module over $k^{j+1}$ algebra.  \\
+$V^{j+1} = V^j\oplus W^j$ and $W^j$ is a $D^j$-module over $D^j$ algebra (consisting of $d^j_k$ coefficients).  \\
+I claim that $k^{j+1} = k^j\oplus D^j$.  
+
+For the filter bank representation involving coefficients $c_k^{j+1}$, $c_k^j$, $d_k^j$, define the convolution function, that involves the commutative ring $k$ in the indices:
+\[
+\widetilde{h}_0* c_k^{j+1} = \sum_l \widetilde{h}_0(k-l)c_l^{j+1}
+\]
+
+Then the filter bank for this Mallot Pyramid Algorithm, or for wavelet coefficients does not involve $V^j$s at all, but on its $k^j$ algebra:
+
+\begin{tikzpicture}
+  \matrix (m) [matrix of math nodes, row sep=2em, column sep=4em, minimum width=4em]
+  {
+         & k^{j+1} & k^j  & k^{j+1} & k^{j+1} &    \\
+ k^{j+1} &         &      &         &         & k^{j+1}   \\
+         & k^{j+1} & D^j  & k^{j+1} & k^{j+1} &
+\\ };
+  \path[->]
+  (m-2-1) edge node [above] {$\widetilde{h}_0 *$} (m-1-2)
+           edge node [below] {$\widetilde{h}_1 * $} (m-3-2)
+  (m-1-2) edge node [above] {$\downarrow 2$} (m-1-3) 
+  (m-1-3) edge node [above] {$\uparrow 2$} (m-1-4) 
+  (m-1-4) edge node [auto]  {$h_0*$} (m-1-5)
+  (m-1-5) edge node [above] {$\oplus$} (m-2-6)
+  (m-3-2) edge node [above] {$\downarrow 2$ } (m-3-3)
+  (m-3-3) edge node [above] {$\uparrow 2 $} (m-3-4)         
+  (m-3-4) edge node [above] {$h_1*$} (m-3-5) 
+  (m-3-5) edge node [below] {$\oplus$} (m-2-6)
+;
+\end{tikzpicture}
+
+\begin{tikzpicture}
+  \matrix (m) [matrix of math nodes, row sep=2em, column sep=4em, minimum width=2em]
+  {
+         & \sum_l \widetilde{h}_0(k-l)c_l^{j+1} &  c_k^{j}  & c^j_{k/2} & \sum_l h_0(k-l)c^j_{l/2} &    \\
+ c^{j+1}_k &             &       &        &            & c^{j+1}_k  \\
+         & \sum_l \widetilde{h}_1(k-l)c_l^{j+1} & d_k^j  & d^j_{k/2} & \sum_l h_1(k-l)d^j_{l/2}  &
+\\ };
+  \path[|->]
+  (m-2-1) edge node [above] {$\widetilde{h}_0 *$} (m-1-2)
+           edge node [below] {$\widetilde{h}_1 * $} (m-3-2)
+  (m-1-2) edge node [above] {$\downarrow 2$} (m-1-3) 
+  (m-1-3) edge node [above] {$\uparrow 2$} (m-1-4) 
+  (m-1-4) edge node [auto]  {$h_0*$} (m-1-5)
+  (m-1-5) edge node [above] {$+$} (m-2-6)
+  (m-3-2) edge node [above] {$\downarrow 2$ } (m-3-3)
+  (m-3-3) edge node [above] {$\uparrow 2 $} (m-3-4)         
+  (m-3-4) edge node [above] {$h_1*$} (m-3-5) 
+  (m-3-5) edge node [below] {$+$} (m-2-6)
+;
+\end{tikzpicture}
+
+with
+\[
+\begin{gathered}
+  \widetilde{h}_0*c_k^{j+1} = \sum_l \widetilde{h}_0(k-l)c_l^{j+1} \overset{ \downarrow 2}{\mapsto} \sum_l \widetilde{h}_0(2k-l) c_l^{j+1} = \sum_l h_0(l-2k) c_l^{j+1} = c_k^j
+\end{gathered}
+\]
+(confirming Eq. \ref{Eq:c^j_kd^j_k00}) and likewise,
+\[
+d^j_k = \downarrow 2 \circ \widetilde{h}_1 * c_k^{j+1}
+\]
+and for the reconstruction part, 
+\[
+\begin{aligned}
+  & h_0 * \uparrow 2 \circ c_k^j = \sum_l h_0(k-l)c^j_{l/2} = \sum_m h_0(k-2m) c^j_m \\ 
+  & h_1 * \uparrow 2 \circ d_k^j = \sum_l h_1(k-l)d^j_{l/2} = \sum_m h_1(k-2m) d^j_m 
+\end{aligned}
+\]
+(confirming Eq. \ref{Eq:c^{j+1}_k00}) and the sum of the above is $c_k^{j+1}$.  
+
+Again, my point is that $\downarrow 2$, $\uparrow 2$ does not act on $t \mathbb{R}$, the domain of $V^j$ as $L^2(\mathbb{R})$, but it acts on the commutative ring of the indices.  
+
+
+
+\section{Accuracy of Wavelet Approximations (Condition A); Vanishing Moments; Polynomial Cancellation in Filter Banks}
+
+\section{Smoothness of Wavelet Bases: Convergence of the Cascade Algorithm (Condition E); Splines. Bases vs. Frames}
+
+\section{Signal and Image Processing: Finite Length Signals; Boundary Filters and Boundary Wavelets; Wavelet Compression Algorithms}
+
+READING: Sec 8.1-8.3, 8.5, 10.1, 11.1-11.5  \cite{GStrangTNguyen1996}
+
+\section{Guest Lecture. Physical Wavelets and their Sources: Real Physics in Complex Spacetime}
+
+READING: ???
+
+\section{Lifting: Ladder Structure for Filter Banks; Factorization of Polyphase Matrix into Lifting Steps; Lifting Form of Refinement Equation; Handout 16}
+
+READING: Sec 6.5 \cite{GStrangTNguyen1996}
+
+\begin{comment}
+\[
+\begin{gathered}
+S(z^2) = S(e^{i2\omega})  \\
+\xrightarrow{ \mathcal{F}^{-1}} \mathcal{F}^{-1}[S(z^2)] = \frac{1}{2\pi } \int_{-\pi}^{\pi} d\omega e^{i\omega t}S(2\omega) \overset{u=2\omega}{=} \frac{1}{4\pi } \int_{-\pi}^{\pi} du e^{ i ut/2} S(u) = \frac{1}{2} S(t/2)
+\end{gathered}
+\]
+
+Recall that for scaling function $\phi$,
+\[
+\begin{gathered}
+\phi = \phi(t) \in V^0 \subset V^1 \text{ and } V^1 = V^0 \oplus W^0 \\
+\phi(t) = \sum_k c_k \phi(t - k) := \sum_k c_k \phi^0_k = \sum_k c_k^1 2^{1/2} \phi(2 t- k ) := \sum_k c_k^1 \phi^1_k 
+\end{gathered}
+\]
+$\phi$ in the frequency domain or $z$-domain, $\phi(z) \in L^2(\mathbb{C})$,
+\[
+\begin{gathered}
+\phi(z) \in \mathcal{F}[V^0] \subset \mathcal{F}[V^1] \text{ and } \mathcal{F}[V^1] = \mathcal{F}[V^0] \oplus \mathcal{F}[W^0] \\
+\phi(z) = \sum_k c_k z^{-k} \widehat{\phi}(z) := \sum_k c_k \widehat{\phi}_k^0 = \sum_k c_k^1 2^{1/2} z^{-\frac{k}{2}} \widehat{\phi}(z^{1/2} ) := \sum_k c^1_k \widehat{\phi}^1_k
+\end{gathered}
+\]
+
+For wavelet $\psi =\psi(t) \in W^0 = V^1 \ominus V^0 \subset V^1$, 
+\[
+\begin{gathered}
+  \psi(t) = \sum_k d^1_k 2^{1/2} \phi(2t -k) = \sum_k d_k \psi^0_k(t) = \sum_k d_k \psi(t - k) = \sum_k d_k \sum_n (-1)^n c_{-n+1} \phi(2(t-k)-n)
+\end{gathered}
+\]
+with $d^1_k = (-1)^k c^1_{-k+1}$
+\end{comment}
+
+See Section \ref{Sec:MallatPyramid} for the setup.  
+
+\subsection{Slide 6}
+
+See Section \ref{Sec:MallatPyramid} for the setup.  
+
+\begin{comment}
+
+EY : 20150706 On Slide 6 of Handout 16 \cite{GStrangKAmaratunga2003}, I need help as of right now to clarify my writeup on the slide here for the Lifting scheme of wavelet bases, because I think there are some egregious typos in the slide.  
+
+It would be instructive to go over wavelet decomposition and reconstruction without lifting first.  
+
+Starting from scaling function $\phi(t) \in V^0 \subset V^1$, then for $\phi(t) = \sum_k c_k^1 \phi_k^1 \in V^1$, 
+
+
+where 
+\[
+\begin{aligned}
+  & c(t) = (\downarrow \circ H_0 * \phi)(t) = H_0* \phi(2t) \\ 
+  & d(t) = (\downarrow \circ H_1 * \phi)(t) = H_1* \phi(2t) \\ 
+  & r_0(t) = \begin{cases} c(t/2) = H_0*\phi(t) & \text{ if } t \in 2\mathbb{Z} \\ 
+    0 & \text{ otherwise } \end{cases} \\ 
+  & r_1(t) = \begin{cases} d(t/2) = H_1*\phi(t) & \text{ if } t \in 2\mathbb{Z} \\ 
+    0 & \text{ otherwise } \end{cases} 
+\end{aligned}
+\]
+
+Now, applying the top row of the filter banks up to decomposition, (to explicitly get $c(t)$),
+\[
+\begin{aligned}
+  & \phi(t) = \sum_k c_k \phi_k = \sum_k c_k  \phi(t-k) \\ 
+  & H_0*\phi(t) = \int_{-\infty}^{\infty}d\tau \sum_k c_k \phi(t-\tau -k )H_0(\tau) \\ 
+  & \downarrow 2 \circ H_0*\phi(t) = \sum_k \int_{-\infty}^{\infty} d\tau c_k  \phi(2t- \tau - k) H_0(\tau) \\
+  & \phantom{\downarrow 2 \circ H_0*\phi(t)} = \overset{\tau \in \mathbb{Z}}{\mapsto} \sum_k \sum_{\tau} c_kH_0(\tau) \phi(2t-\tau -k) \overset{l=\tau+k}{=} \sum_l \sum_{\tau} c_{l-\tau} H_0(\tau) \phi(2t - l ) = \sum_l c^1_l\phi(2t-l)
+\end{aligned}
+\]
+Work can be done on rewriting the convolution in a discrete form, but the point is clear: $\downarrow 2 \circ H_0 * \phi(t)$ yields the $V^1$ part of $\phi(t)$ when the scaling function is written in terms of $c^1_k$'s.     
+
+In other words, the point is this: using the orthonormality of the bases,
+\[
+\langle \phi(t), \phi_l^1(t) \rangle = c_l^1 = \int_{-\infty}^{\infty}dt \phi(t)\overline{\phi(2t-l)}
+\]
+and the top row of filter banks for decomposition does this.  
+
+For the bottom row of filter banks for decomposition, 
+\[
+\begin{gathered}
+\begin{aligned}
+  \downarrow 2 H_1 * \phi(t) & = \sum_l \sum_{\tau} c_{l-\tau} H_1(\tau) \phi(2t-l) = \psi(t) = \sum_l d_l 2^{1/2}\phi(2t-l) \\ 
+  & \overset{m=l-\tau}{=} \sum_l \sum_m H_1(l-m)c_m2^{-1/2}\phi_l^1(t)
+\end{aligned} \\ 
+  \langle \phi(t), \psi_l^0(t) \rangle = d_l
+\end{gathered}
+\]
+The expression $\sum_l \sum_m H_1(l-m)c_m2^{-1/2}\phi_l^1(t)$ tells us what $H_1$ is like as a matrix, $H_1(l-m) = (H_1)_{lm}$.  
+
+For the reconstruction, 
+\[
+\begin{aligned}
+  & \uparrow 2 \circ c(t) = c\left( \frac{t}{2} \right) = \sum_k c_k^1 2^{1/2} \phi(t-k) \\ 
+  & F_0 * \uparrow 2 \circ c(t) = \int_{-\infty}^{\infty} d\tau \sum_k c_k^1 2^{1/2} \phi(t-\tau -k) F_0(\tau) \overset{ \tau \in \mathbb{Z}}{=} \sum_{\tau} \sum_k c_k^1 2^{1/2} \phi(t-\tau-k) F_0(\tau) \\
+  & \overset{l=\tau +k}{=} \sum_l \sum_{\tau} c^1_{l-\tau} 2^{1/2} F_0(\tau) \phi(t-l) \overset{ m=l-\tau}{=} \sum_l \sum_m F_0(l-m)c^1_m2^{1/2} \phi(t-l) = \sum_l c_l\phi_l(t)
+\end{aligned}
+\]
+and
+\[
+\begin{aligned}
+  & d(t) = \sum_k 2^{1/2} d_k^1 \phi(2t-k) \\ 
+  & \uparrow 2\circ d(t) = d(t/2) = \sum_k 2^{1/2} d^1_k \phi(t-k) \\ 
+  & (F_1 * \uparrow 2 \circ d)(t) = \int_{-\infty}^{\infty} d\tau \sum_k 2^{1/2} d^1_k\phi(t-\tau -k) F_1(\tau) = \sum_k \sum_{\tau} 2^{1/2} d^1_k \phi(t-\tau -k)F_1(\tau) \\
+&  \overset{l=\tau+k}{=} \sum_l \sum_{\tau} 2^{1/2} d^1_{l-\tau}\phi(t-l) F_1(\tau)  \overset{m=l-\tau}{=} \sum_l \sum_m 2^{1/2} d^1_m F_1(l-m) \phi(t-l) = \sum_l d_l \phi_l(t)
+\end{aligned}
+\]
+Then add together $\sum_l c_l\phi_l(t)$ and $\sum_l d_l\phi_l(t)$ to reobtain $\phi(t)$.  
+
+\subsubsection*{Lifting for wavelet bases} \quad \\ 
+
+Given a scaling function $\phi(t) \in V^0$ and \\
+given wavelet \phantom{g function} $\psi(t) \in W^0=V^1\ominus V^0$, 
+
+we seek to add linear combinations of the scaling function \emph{at the same resolution} (in this case $j=0$) to $\psi(t)$.  EY : 20150706 my question is I'm concerned if new $\widetilde{\psi}(t)$ ``stays in'' $W^0$ after adding these linear combinations in $V^0$.  However, it seems that with dual lifting, with both the scaling function and the wavelet changing, then this can be ok (I would like confirmation on that point).  
+
+So the scheme is 
+\[
+\begin{aligned}
+  & \widetilde{\psi}(t) = \psi(t) - \sum_k s(k) \phi(t-k) \overset{ u = t-k }{=} \psi(t) - \sum_u s(t-u) \phi(u) = \psi(t) - s*\phi(t) \\ 
+  & \widetilde{\phi}(t) = \sum_n h_0(n) \phi(2t-n) + \sum_k s(k)\widetilde{\psi}(t-k) \overset{ m = 2t -n} = \sum_m h_0(2t-m)\phi(m) + \sum_u s(t-u)\widetilde{\psi}(u) = \downarrow 2 \circ h_0*\phi(t) + s*\widetilde{\psi}(t) \\ 
+  & \widetilde{\widetilde{\psi}}(t) = \sum_n h_1(n) \phi(2t-n) = \sum_m h_1(2t-m)\phi(m) = h_1*\phi(2t)
+\end{aligned}
+\]
+For the $z$-domain, with understanding of the algebra over field $\mathbb{R}$, vs. the algebra over field $\mathbb{C}$ (see Subsubsection \ref{SubSubSec:NobleIdentities}), it is clear that 
+\[
+\begin{aligned}
+  & \widetilde{\psi}(z) = \psi(z) - S\cdot \phi(z) \\ 
+  & \widetilde{\phi}(z) = \downarrow 2 \circ H_0 \cdot \phi(z) + S\cdot \widetilde{\psi}(z) = \frac{1}{2} (H_0(z^{1/2}) \phi(z^{1/2}) + H_0(-z^{1/2}) \phi(-z^{1/2}) ) + S(z) \widetilde{\psi}(z) \\ 
+  & \widetilde{\widetilde{\psi}}(z) = \downarrow 2 \circ H_1\cdot \phi(z) = \frac{1}{2} ( H_1(z^{1/2}) \widetilde{\phi}(z^{1/2}) + H_1(-z^{1/2})\widetilde{\phi}(-z^{1/2}))
+\end{aligned}
+\]
+
+So the filter bank (commutative diagram) for only the ``analysis'' or decomposition step for the lifting scheme is the following:
+
+\begin{tikzpicture}
+  \matrix (m) [matrix of math nodes, row sep=3em, column sep=7em, minimum width=3em]
+  {
+         & H_0\cdot \phi(z) & \downarrow 2 \circ H_0\cdot \phi(z)  & \widetilde{\phi}(z)     \\
+ \phi(z) & -S\cdot \phi(z)  & \widetilde{\psi}(z)                  &  \\
+         & H_1\cdot \phi(z) & \downarrow 2 \circ H_1 \cdot \phi(z) & 
+\\ };
+  \path[|->]
+  (m-2-1) edge node [above] {$H_0 \cdot$} (m-1-2)
+          edge node [above] {$-S\cdot $ } (m-2-2)
+           edge node [below] {$H_1 \cdot $} (m-3-2)
+  (m-1-2) edge node [above] {$\downarrow 2$} (m-1-3) 
+  (m-1-3) edge node [above] {$ +S\cdot \widetilde{\psi}(z) $} (m-1-4) 
+  (m-2-2) edge node [above] {$+\psi(z)$ } (m-2-3)
+  (m-2-3) edge node [above] {$S\cdot $} (m-1-4)         
+  (m-3-2) edge node [above] {$\downarrow 2$} (m-3-3) 
+  (m-3-3) edge node [auto] {$- S \cdot$} (m-2-3);
+\end{tikzpicture}
+
+and for the spaces we are on
+
+\begin{tikzpicture}
+  \matrix (m) [matrix of math nodes, row sep=3em, column sep=7em, minimum width=3em]
+  {
+                  & \mathcal{F}[V^1]  & \mathcal{F}[V^0]  & \mathcal{F}[V^1]      \\
+ \mathcal{F}[V^1] & \mathcal{F}[V^1]  & \mathcal{F}[V^0]  &  \\
+                  & \mathcal{F}[V^1]  & \mathcal{F}[W^0] & 
+\\ };
+  \path[|->]
+  (m-2-1) edge node [above] {$H_0 \cdot$} (m-1-2)
+          edge node [above] {$-S\cdot $ } (m-2-2)
+           edge node [below] {$H_1 \cdot $} (m-3-2)
+  (m-1-2) edge node [above] {$\downarrow 2$} (m-1-3) 
+  (m-1-3) edge node [above] {$ +S\cdot \widetilde{\psi}(z) $} (m-1-4) 
+  (m-2-2) edge node [above] {$+\psi(z)$ } (m-2-3)
+  (m-2-3) edge node [above] {$S\cdot $} (m-1-4)         
+  (m-3-2) edge node [above] {$\downarrow 2$} (m-3-3) 
+  (m-3-3) edge node [auto] {$- S \cdot$} (m-2-3);
+\end{tikzpicture}
+
+\end{comment}
+
+The lifting scheme is the following:
+\begin{proposition}[Lifting scheme for wavelets]\label{Prop:Liftingscheme}
+In the filter bank representation on the $k^j$ algebras of which $k^j$-algebras $V^j$ is over,
+\begin{equation}
+\begin{aligned}
+  & \widetilde{h}_0^{\sharp} = \widetilde{h}_0 + u * \widetilde{h}_1 \\
+  & h_1^{\sharp} = h_1 - h_0 * u
+\end{aligned}
+\end{equation}
+where $\sharp$ denotes the new $\widetilde{h}_0$ or $h_1$, and $*$, in this algebra, is the convolution operator, but on the commutative ring of the indices (\emph{not} the time or spatial domain of the wavelet themselves).  
+\end{proposition}
+
+\begin{proof}
+$\sharp$ denotes new values, after the lifting transformation.
+\[
+\begin{aligned}
+&  \downarrow 2 \circ \widetilde{h}^{\sharp}_0*c_k^{j+1} = \downarrow 2 \circ ( \widetilde{h}_0 * c_k^{j+1} + \sum_{l,m} u(k-m)\widetilde{h}_1(m-l) c_l^{j+1} ) = c^j_k + \sum_{l,m} u(2k-m)h_1(l-m)c_l^{j+1} = c^{\sharp j}_k   
+\end{aligned}
+\]
+$d^j_k$ stays the same:
+\[
+d^j_k = \downarrow 2 \circ \widetilde{h}_1 * c_k^{j+1}
+\]
+
+For the reconstruction part, 
+\[
+\begin{aligned}
+  & h_0 * \uparrow 2 \circ c^{\sharp j}_k = h_0 * \uparrow 2 \circ c^j_k + \sum_l h_0(k-l) \sum_{m,n} u(l-m)h_1(n-m)c_n^{j+1} \\
+  & \begin{gathered}
+      h_1^{\sharp} * \uparrow 2 \circ d_k^j = h_1 * \uparrow 2 \circ d^j_k - h_0 * u * \uparrow 2 \circ d_k^j = h_1 * \uparrow 2 \circ d^j_k - \sum_{l,m} h_0(k-l)u(l-m) d^j_{m/2} = \\
+      = h_1 * \uparrow 2 \circ d^j_k - \sum_{l,m} h_0(k-l)u(l-m) \sum_n \widetilde{h}_1(m - n)c_n^{j+1} = h_1 * \uparrow 2 \circ d^j_k - \sum_{l,m,n} h_0(k-l)u(l-m)h_1(n-m) c_n^{j+1}
+\end{gathered}
+\end{aligned}
+\]
+Clearly, summing the above two equations reconstructs the original $c^{j+1}_k$ coefficient, noticing the cross term cancels exactly.  
+\end{proof}
+
+Note the change (and no change) in the coefficients, which I'll recap here:
+\[
+\begin{aligned}
+  & c^{\sharp j}_k  = c^j_k + \sum_{l,m} u(2k-m)h_1(l-m)c_l^{j+1}  \\
+  & d^j_k = \sum_l h_1(l-2k) c_l^{j+1} \\
+& c^{j+1}_k = \sum_l c_l^{\sharp j} h_0(k-l) + \sum_l d^j_l h_1^{\sharp}(k - 2l)
+\end{aligned}
+\]
+
+Going back to Slide 6, \\
+Recall Eqs. \ref{Eq:scalingfunctioninV^1}, \ref{Eq:psiinV^1}
+\[
+\begin{aligned}
+  & \phi(t) = \sum_l h_0(l)2^{1/2} \phi(2t-l)  \\ 
+  & \psi(t) = \sum_l h_1(l)2^{1/2} \phi(2t-l)
+\end{aligned}
+\]
+With Proposition \ref{Prop:Liftingscheme}, 
+\[
+\begin{gathered}
+  \psi^{\sharp}(t) = \sum_l h_1^{\sharp}(l) 2^{1/2} \phi(2t-l) = 2^{1/2} \sum_l h_1(l) - \sum_m h_0(l-m)u(m) \phi(2t-l) = \\
+  = \psi(t) + 2^{1/2}\sum_{l,m} u(m) h_0(l-m) \phi(2t-l +m - m) = \psi(t) + \sum_m u(m) \phi(t - m/2) = \psi(t) + \sum_k u(2k) \phi(t-k)
+\end{gathered}
+\]
+These two expression are from the ``reconstruction'' part of the filter bank.  It is clear now what the first 2 expressions on Slide 6 is for.  
+
+For the last 2 expressions of Slide 6, consider the decomposition part of the filter bank involving $\widetilde{h}_0$, $\widetilde{h}_1$.  
+
+Let's resolve the very last expression, which is essentially
+\[
+\psi(t) = \sum_l h_1(l)2^{1/2} \phi^{\sharp}(2t-l)
+\]
+However, 
+\[
+\begin{gathered}
+  \phi^{\sharp}(t) = \sum_l \widetilde{h}^{\sharp}_0(l) 2^{1/2} \phi^{\sharp}(2t-l) = \sum_l (\widetilde{h}_0 + u *\widetilde{h}_1  )(l) 2^{1/2}\phi^{\sharp}(2t-l) = \\
+  = \sum_l \widetilde{h}_0(l) 2^{1/2} \phi^{\sharp}(2t-l) + \sum_{l,m} u(m)\widetilde{h}_1(l-m) \phi^{\sharp}(2t-l +m - m) =  \\
+  = \sum_l \widetilde{h}_0(l) 2^{1/2} \phi^{\sharp}(2t-l) + \sum_m u(m) \psi(t-m/2) = \sum_l \widetilde{h}_0(l) 2^{1/2} \phi^{\sharp}(2t-l) + \sum_k u(2k) \psi(t-k)
+\end{gathered}
+\]
+
+
+\subsection{On the Reading, Sec. 6.5, Biorthogonal Wavelets}
+
+\subsubsection{On Lifting}
+
+cf. Subsection ``Filter Construction by Lifting'' for Sec. 6.5 \cite{GStrangTNguyen1996}
+
+The so-called ``no alias'' condition for a 2-channel (i.e. $\downarrow 2$, and the frequencies ``separate into'' two different ranges, by $2\pi/2$) filter bank is 
+\[
+F_0(z) H_0(-z) + F_1(z) H_1(-z) = 0 
+\]
+There is a choice of filters (transformations) $F_0,F_1$ that can be made.  Let 
+\[
+\begin{aligned}
+  & F_0(z) = H_1(-z) \\ 
+  & F_1(z) = -H_0(-z)
+\end{aligned}
+\]
+Thus, do this dual lifting:
+\[
+\begin{aligned}
+  & H_0^{\sharp}(z) = H_0(z) + F_0(-z)S(z^2) \\ 
+  & F_1^{\sharp}(z) = F_1(z)+H_1(-z)T(z^2)
+\end{aligned}
+\]
+Given the choice above $H_0^{\sharp},F_1^{\sharp}$ of $F_0, F_1$, then 
+\[
+\begin{aligned}
+  & H_0^{\sharp}(z) = H_0(z) + H_1(z)S(z^2) \\ 
+  & F_1^{\sharp}(z) = F_1(z)+ F_0(z)T(z^2)
+\end{aligned}
+\]
+
+\subsection{Software: Handout16 examples.py}
+
+At this point, you should run \verb|Handout16_examples.py| (I made it myself, I don't think the MIT OCW 18.327 material has the code for anything beyond Handout 16) and reproduce the so-called Symmetric 5/3 Wavelets on Slide 16.  They are actually the biorthogonal wavelets for the Cohen-Daubechies-Feauveau wavelets \footnote{``Cohen-Daubechies-Feauveau wavelet'', \emph{Wikipedia.org}, \url{https://en.wikipedia.org/wiki/Cohen-Daubechies-Feauveau_wavelet}}.  In Matlab, they are called ``bior2.2''.  The 2 and 2 refer to the number of vanishing moments of the high pass filter; same in PyWavelets.  
+Running the plots in the file, you should reobtain the plots for Slide number 12 of Handout 16, and I also plotted the filter bank coefficients, Figures \ref{Fig:Handout16_fig_1}, \ref{Fig:Handout16_fig_2}:
+
+\begin{figure}[h!]\label{Fig:Handout16_fig_1}
+ \caption{cf. ernestyalumni}
+ \centering
+   \includegraphics[width=1.0\textwidth]{Handout16_fig_1.png}
+\end{figure}
+
+\begin{figure}[h!]\label{Fig:Handout16_fig_2}
+ \caption{cf. ernestyalumni}
+ \centering
+   \includegraphics[width=1.0\textwidth]{Handout16_fig_2.png}
+\end{figure}
+
+
+\section{Wavelets and Subdivision: Nonuniform Grids; Multiresolution for Triangular Meshes; Representation and Compression of Surfaces; Slides and Handouts 17,18}
+
+READING: It appears that there are no reading for this session, other than Slides and Handouts 17, 18. 
+
+\section{Numerical Solution of PDEs: Galerkin Approximation; Wavelet Integrals (Projection Coefficients, Moments and Connection Coefficients); Convergence. Subdivision Wavelets for Integral Equations. Compression and Convergence Estimates}
+
+READING: Sec 11.6 \cite{GStrangTNguyen1996}
+
+
+
+\section{M-band Wavelets: DFT Filter Banks and Cosine Modulated Filter Banks. Multiwavelets}
+
+READING: Sec 7.5, 9.1-9.4 \cite{GStrangTNguyen1996}
+
+\part{Extra fun}
+
+I wanted to, in this part of an open-sourced LaTeX file, welcome and elicit projects, ideas, resources beyond the MIT OCW 18.327.  You should, if you're reading this and wanted to add to this pdf/LaTeX document, share your projects, ideas, and resources here.  
+
+\section{Fun with Quandl}
+
+Install (you can use pip install) Quandl (it's open-source).  Open up \verb|fun_w_Quandl.py| that's in the tools directory of the github for \verb|18-327-wavelets-filter-banks|.  Quandl provides open data, public data that they're trying to make free, open, and (easily) accessible to all.  
+
+With \verb|fun_w_Quandl.py|, I've tried to use the Haar wavelet transform to apply discrete wavelet transforms (dwt) of a few time-series data that seemed relevant at the time (the Shanghai Composite Index and the Interest Rate Spread of 2 years vs. 10 years for the LCY (Local Currency Renminbi or Chinese Yuan) Bond).  The Python functions in the file, obtenir and \verb|pkl_data|, gets the time-series data directly from Quandl and ``persists'' the data i.e. saves it locally using Python's pickle library.  You don't want to be making calls to the Quandl website more than necessary.
+
+See Figures \ref{Fig:LCYbond2v10_fig_1}, \ref{Fig:Shanghai_Comp_fig_2}
+
+\begin{figure}[h!]\label{Fig:LCYbond2v10_fig_1}
+ \caption{cf. ernestyalumni}
+ \centering
+   \includegraphics[width=1.0\textwidth]{LCYbond2v10_fig_1.png}
+\end{figure}
+
+\begin{figure}[h!]\label{Fig:Shanghai_Comp_fig_2}
+ \caption{cf. ernestyalumni}
+ \centering
+   \includegraphics[width=1.0\textwidth]{Shanghai_Comp_fig_2.png}
+\end{figure}
+
+
+Then you can read in the data onto your Python interactive interpreter with lire and then apply the dwt on all the data sets with \verb|make_dwt| and plot all of the approximation and detail coefficients with \verb|plot_dwt|.  
+
+I would invite you to run the file and play around with it, alongside looking at the Python code and trying out your own time series of interest from Quandl.  I'd also would like to know if you guys have any ideas or interpretations of what wavelets can tell us about time-series data.  
+
+\part{Colophon, Rationale, PitchDeck, and Help Me and Help Others}\label{Part:Colophon}
+
+\section{Why Wavelets (for me)?}
+
+One day on 18 juin 2015, I find myself needing to learn about wavelets, fast. I had just found the video uploaded to YouTube of the talk given by Adam Lichtl and Stephen Jones (of SpaceX), given at the GPU Tech Conference, San Jose, California, in March 17 - 20, 2015 \footnote{\url{https://youtu.be/txk-VO1hzBY}, originally posted at \url{http://on-demand.gputechconf.com/gtc/2015/video/S5398.html}}, and Lichtl, at the end, strongly recommended that one look at the research of Vasilyev, Regele, Lamb, Ramaprabhu, Oefelein, and Massot.  Lichtl and Jones mentioned Wavelets and Wavelet compression in their slides and I also uncovered that one should learn and use something called ``wavelet collocation.''  
+
+I should mention that my goal is to get humanity to become a truly spacefaring civilization and to enable all the kinds of exploration as seen in Christopher Nolan and Kip Thorne's \emph{Interstellar} (2014).  I share in SpaceX's mission of getting humanity to become a truly spacefaring civilization, and so I want to meet the needs of and directly help out SpaceX in anyway.\footnote{\url{https://www.linkedin.com/in/ernestyalumni}}
+
+I had \emph{no idea} what a wavelet is, nor even the context of where wavelets come from, or used, or what not.  The first thing I now do when I want to pick up a new skill is to see if the MIT OCW  has a course on it, and if any of the websites providing MOOCs (Massive, Open, Online Courses) - edX, coursera, udacity - has anything.  There was MIT OCW 18.327, \emph{Wavelets, Filter Banks, and Applications}, taught in Spring 2003 by Strang and Amaratunga.  But the problem was this.
+
+\section{The Problem (and the Solution)}
+
+\subsection{The Problem with Education}
+
+\begin{quotation}
+Through a sequence of things that I'll tell you about, I got really interested in seeing if we could make higher education available to everybody. I think it's \emph{the most important that a human being could do}, because \textbf{human resources} - people - are the \emph{most important resources on the planet and everything that you can make and do comes through education}. 
+
+For you, this might be relatively trivial and obvious because you made it into Brown [University], but if you’re in Africa, in India, and in the developing world; if you have medical problems, that might not be quite as obvious. --Sebastian Thrun, \emph{Udacity} \footnote{\href{http://youtu.be/YqH25oEKd24}{Online Learning: The Challenge - Sebastian Thrun}}
+\end{quotation}
+
+If we're to fulfill the promise of making education, at the highest levels, open, openly and freely available to anyone, anywhere, at anytime, then we need to address these problems I had with this MIT OCW 18.327, and in general, with MIT OCW and MOOCs.
+\begin{itemize}
+\item The code included in the tools directory of MIT OCW 18.327 used Matlab. \textbf{A Matlab Individual license is \$2,150} US dollars \footnote{\url{http://www.mathworks.com/pricing-licensing/}}.  The cost of using Python is \$0.  I can't afford a single individual license, let alone, if and when I run a company, want to afford licenses for my staff.  The cost of using wavelets should be \$0.  
+
+Coursera has \href{https://www.coursera.org/course/compmethods}{Computational Methods for Data Analysis} that has a section on wavelets, taught by Nathan Kutz, in January-March 2015, but Matlab is exclusively used.  
+
+From my (unscientific) survey of browsing the web of disparate university course websites, courses on wavelets uses Matlab exclusively.  
+
+I'm cognizant of GNU Octave as a direct open-source alternative to Matlab and Matlab code is presumed to run on GNU Octave, but there are things like the Matlab Wavelet Toolkit that is exclusive (and exclusively a proprietary black box \footnote{\url{http://www.mathworks.com/help/wavelet/ref/upcoef.html}}) to Matlab, and loading packages in GNU Octave doesn't always work (nor is well-documented). 
+
+We can do better, and we can do everything and more in \textbf{Python}.  Installing packages is especially easy with pip and Homebrew.  As great as GNU Octave is, and it is great, I can't get the wavelet package in GNU Octave to easily run without errors, nor all the file and website IO that I can with Python.  
+
+Again, I want to emphasize that relying on Matlab for research and engineering deployment, and education is not cost-effective, not amenable to anything other than a black box, nor meets the promise of making higher education openly and freely available to everybody, anywhere, at anytime.  A Matlab Individual License is \$2150.  The cost of using Python is \$0.  Even at the proposed hourly minimum wage in the U.S. of \$15, this is 143 work-hours. The average monthly salary of a Medical Doctor in the Czech Republic is \$961 \footnote{\url{http://www.worldsalaries.org/czechrepublic.shtml}}.  We cannot expect education, let alone online education, to live up to its promise of reaching anyone, anywhere, at anytime, who desires to learn and improve society, if the required equipment for learning costs more than two months of a living wage - Open Source Software (OSS), and in particular Python and its libraries that I am championing here, delivers on that promise.  
+\item \textbf{Powerpoint(-like) slides} The serious defect with using Powerpoint (or Powerpoint-like slides, including beamer for LaTeX) is this: \url{http://norvig.com/Gettysburg/}.   
+
+We should stop using Powerpoint slides to convey technical information and ideas. At the very least, an accompanying document should ``flesh out'' the slides.  
+
+The serious defect(s) when using the MIT OCW material, or any lecture slides, is the Powerpoint template and structure itself and the fact that the presenter is not there and is not present to explain the slides.  It causes me, and anyone else, to have to reconstruct what the presenter meant in the slides and it causes confusion and it's inefficient in learning.  %Again, we're \emph{not trying to reinvent the wheel} here.  
+\item \textbf{Typography} The typography of the slides and handouts is poor and doesn't look good or pleasing at all.  Nor is the typography standardized in any way.  It leads to a lot of confusion. 
+
+Yes, typography matters, because the analogy is this: before the Apple iMac, the convention was that the PC is this beige, uninspiring plastic box.  Nothing was devoted to its design, and for the manufacturers that did attempt to, such as Sony with its VAIO line, priced design exorbitantly high.  Anyways, the convention for the Wintel PC was to be utilitarian and starkly and functionally beige.  The Apple iMac in 1998 was stunning in its design (by Jonathan Ives).  You wanted to use the iMac more.  You wanted to play with it and learn more about it.  You enjoyed using it more.  And then you ended up increasing your productivity because you ``naturally'' wanted to use it more.  
+
+The analogy, I think, applies in this case: the typography of the slides for MIT OCW 18.327 is lacking and so are many of the MIT OCWs (e.g. MIT OCW 16.512 Rocket Propulsion).  But if the typography was better (and elegant), we can help with readability, making it easier to understand (and decrease confusion), and make them more fun to use (and reuse).  
+
+Also, in a lot of the slides, not just for MIT OCW 18.327, but in many of the MIT OCWs, the graphs, pictures, and figures are blurry and the plot labels are unreadable.  
+\item \textbf{Books don't update themselves}.  They get outdated with progress and so do the material around it.  
+\item Books aren't interactive; if you're reading about a technical area with computer applications, the computer applications are divorced, in section and in structure, from the concepts and theory presented, when they should go hand in hand and in parallel.   
+\item Typos in books and in the MIT OCW material do cause confusion and there's no way for the reader to correct them directly and share this edit with others.  
+\item \textbf{MOOCs are expensive}.  The cost of a MOOC is upwards to and beyond \$244,000 \footnote{``How and Why Institutions are Engaging with MOOCs…Answers in Report “MOOCs: Expectations and Reality”'', \url{https://onlinelearninginsights.wordpress.com/tag/costs-of-developing-a-mooc/}} and it's hugely time-consuming \footnote{Jonah Miller, ``Course Review: Practical Numerical Methods with Python by George Washington University'', \url{https://www.class-central.com/report/gwu-numerical-mooc-review/}} 
+\item \emph{There aren't many MOOCs that serve the graduate and post-graduate level.}  ``Reservoir Geomechanics'' taught by Zoback \footnote{\url{https://lagunita.stanford.edu/courses/EarthSciences/GP202/Spring2014/about}} pulled no punches and was a really good, high, graduate-level course on Reservoir Geomechanics, a.k.a. oil drilling and fracking.  Otherwise, for graduate-level courses, I find the MIT OCWs to be more complete, as it's (assumedly) all the exact same material as used in the offline class.  But again, see the problems I mentioned above.   
+\item Prof. Strang hasn't taught this class in over ten years and Dr. Amaratunga had left MIT and had not responded to inquiries at his current occupation at Scaled Display Technologies.  This seems like a general problem with any class online or offline because there's a shelf-life for the material (and the instructors!).  The hope for the online format is that there'll be someone online that can help out.  That's why I place a lot of hope and admiration for \textbf{quora} and \textbf{stackexchange}.
+\end{itemize}
+
+\subsubsection{Solutions}
+
+\begin{itemize}
+\item \textbf{Python}. I've rewritten about half of the Matlab code used in MIT OCW 18.327 in Python and placed it all on \href{https://github.com/ernestyalumni/18-327-wavelets-filter-banks}{github}.  I've also written up Python scripts to accompany later Handouts (Handout 16 and on) that are missing in the original MIT OCW 18.327 material, but it was obvious from the Handouts that more computer-generated plots were there (but wasn't in the tools directory).  
+
+I've outlined explicitly, and in conjunction with the Handouts, how and what to use with the different Python libraries, including PyWavelets, and encourage its use and interactivity.      
+\item \textbf{In between a textbook and lecture slides}: This is an excellent example of how to provide material for a talk or lecture, and not the Powerpoint slides: Title:The singularity theorems in general relativity. II, Speaker:Amir Aazami (Kavli IPMU), Date:Fri, May 17, 2013, 10:00 - 11:30, \url{http://db.ipmu.jp/seminar/sysimg/seminar/945.pdf}.  Take a look at the pdf 945, ``Lecture I: Basic properties of Lorentzian manifolds.''  They are something in between a textbook and Powerpoint slides.  This is what I tried to do here with this LaTeX file, that I make publicly available on github.
+\item Use LaTeX for typography and make it publicly available on github (and the pdf on Google Drive or Dropbox) so people can copy, edit, and add onto the LaTeX or the pdf.  Since it's on github, students and (older) learners can share their notes and insights directly there.    
+
+Look, I know it's time-consuming and sometimes a pain-in-the-ass to LaTeX typeset everything.  Sometimes, I see some students make fantastic looking and very comprehensive notes of the course lectures in LaTeX.  Why not make the pdf AND the LaTeX available publicly on github (or wherever) so that we can crowdsource this process and have more insights and questions and answers from the bottom-up, as opposed to top-down from lecturer to students?
+
+For plots, figures, and pictures, you can make your own plots, as I've meticulously outlined and instructed here, and improve upon them, so they'd be crystal clear.  
+\item On github, anyone can update this LaTeX file and the Python/GNU Octave code anytime.
+\item Python's interactive interpreter is one of its most famous and greatest features.
+\item On github, anyone can make edits and correct for typos.
+\item Sharing stuff on github and on Google Drive or DropBox costs \$0.  I'm not maintaining a discussion forum or moderating it either so that costs \$0, also in time.  
+\item This LaTeX file and related code was born out of trying to understand and get the tools for, quickly, combustion CFD.  I write for a high-level.  But having this material open-sourced, if someone wants to ``fork'' or make their own version with more elementary and pedagogical explanations and language, he or she can go right ahead (just remember to share it).   
+\item I could appreciate that university professors can't or don't want to (I don't know) answer the questions from everyone wanting to learn about wavelets.  Look, I understand, we're all busy people.  Even TAs aren't getting paid enough, and TAs wouldn't want to answer every emailed question from everyone, nor moderate an online discussion forum (it's time-consuming and can be aggravating).  Why not crowdsource and divide out this labor online?  
+
+The kinds of discussion forums on udacity, Stanford online (was edX, now Lagunita) is great for this and, in my opinion, very underutilized.  The discussion forums are a gem and should be front and center of the learning process that would move the \emph{office hours}, \emph{TA sessions}, in continental Europe what would be called the \emph{Tutorial, Tutorium} and \emph{Exercise session oder \"{U}bungsbl\"{a}tter} \textbf{online}.  I recognize that setting up and moderating a discussion forum is a time-consuming effort.  Beyond a Usenet-style email list, I wanted to try here an open-sourced, publicly available LaTeX file that anyone can copy, edit, reuse, and add onto to further the discussion.  
+
+My rationale with this is everybody can be ``on the same page,'' technical, mathematical typesetting can be done quickly (from my experience, and please tell me about anything I'm missing, but LaTeX math typesetting online, on wordpress, a forum, stackexchange, is very time-consuming and not fun at all - I'm well aware that there are a number of  individuals who blog posts or answer on stackexchange very clearly and voluminously math expressions with specific, custom LaTeX typesetting, but it ends up being a one-way street of communication, because we're not going to type that much if we can't copy, paste, and edit).  
+\item \textbf{One single LaTeX/pdf file for the course or subject}.  How many times has one had to dig up different handouts or lectures notes on different files to reinforce a previous concept?  Just throw it all in one LaTeX/pdf file.  And unlike a lot of the slides and handouts for the MIT OCWs and other classes, with LaTeX generated pdf files; they're completely \emph{searchable}: we don't have to waste as much time on creating an indexing scheme.  
+\end{itemize}
+
+I don't have all the answers to education, online or offline, but clearly, we can do better, and do it at a lower cost and price point.  But we cannot fail in meeting the needs and challenges of education.  This is not just for students in university. This is also for employee retraining, employee development, career retaining, whether at a corporation, government, or a startup, or a freelance individual. \textbf{Failing to bring open access to technical education and modular skill acquisition is failing the future workers of the world.}  As an American, of course I'm concerned with the huge, termed \emph{skills gap} between the U.S. labor workforce, between the portion of the U.S. workforce that finds themselves down-sized out of work, and need to acquire new skills fast, between companies that are trying to fill and meet their human resources needs by checklisting qualifications and with potential employees and workers who don't have access to or know where to begin to acquire these skills to help meet the needs of companies large and small, mature and startup.  But these issues apply all around the world, including developed countries, in particular the U.K., Ireland, France, Germany\footnote{``Skills Mismatches and Labour Mobility'', europa.eu \url{http://ec.europa.eu/europe2020/pdf/themes/27_skills_gaps_and_labour_mobility_02.pdf}}.   
+
+\subsection{Helping Out and Helping Others}
+
+I will be restarting my crowdfunding campaign on Open/Tilt to crowdfund for money to do more computational fluid dynamics and wavelet applications on the Mac and Linux.  I want to develop on Swift using the Accelerate framework for numerical computation, including the wavelet stuff here.  Also, I want to do CFD and wavelet stuff on a Linux box.  I would be crowdfunding for about \$43,000, \$16,000 in new computer equipment for the Mac and Linux, and including \$20,000 to pay myself, for my efforts here and continuing development.  About 15-20\% goes to taxes.  \emph{It's still a fraction of the cost of a MOOC at \$244,000 or the pay and equipment of TAs and an instructor and administrative staff at an offline university (single high-end TA salary is \$23000)}.  I'll launch the crowdfunding campaign as soon as I can; any and all questions and negative feedback (and funds) would be welcomed right now.  However, as I've mentioned several times above, I'm committed to free and open education and tools so regardless of how much I raise (if at all), or even if I fail to get others on board to help out in this effort with Wavelets (I've tried emailing Prof. Strang and Dr. Amaratunga a number of times but I've either gotten no substantial help or critical feedback, or no response at all), I'll always keep all this stuff out for free and public use and distribution.  
+
+If you can't help out with my own crowdfunding efforts, or I haven't convinced you enough yet (please tell me why so I could improve), then at the very least, please read and contribute to the Memorial fund for the creator of Python library \textbf{matplotlib}, John Hunter.  ``On August 28 2012, John D. Hunter, the creator of matplotlib, died from complications arising from cancer treatment, after a brief but intense battle with this terrible illness. John is survived by his wife Miriam, his three daughters Rahel, Ava and Clara, his sisters Layne and Mary, and his mother Sarah.''\footnote{John Hunter Memorial Fund, Numfocus.org, \url{http://numfocus.org/news/2012/08/28/johnhunter/}}  I used matplotlib heavily for plotting with wavelets in Python and you should too, as it's open-source, it costs effectively \$0, and it's very flexible and amenable to changing needs.  As of right now, I'm still seeking any kind of position at SpaceX, as I believe in their mission to the core, and I had just gotten my Masters in Physics, and I don't have any income right now, but I am PayPal'ing to the John Hunter Memorial Fund next week (20150709) as soon as my bank transfer clears, with whatever I can.  If you can't help me out, fine, but at least help out the John Hunter Memorial Fund because matplotlib has been very useful.   
+
+
+
+
+
+
+\begin{thebibliography}{9}
+\bibitem{GStrangKAmaratunga2003}
+Gilbert Strang, and Kevin Amaratunga. 18.327 Wavelets, Filter Banks and Applications, Spring 2003. (Massachusetts Institute of Technology: MIT OpenCourseWare), \url{http://ocw.mit.edu} (Accessed 19 Jun, 2015). License: Creative Commons BY-NC-SA
+
+\bibitem{GStrangTNguyen1996}
+Gilbert Strang, Truong Nguyen. \textbf{Wavelets and Filter Banks}, Wellesley-Cambridge Press; 2nd edition, 1996. ISBN-13: 978-0961408879
+
+\bibitem{ELiebMLoss2001}
+Elliott H. Lieb and Michael Loss, \textbf{Analysis} (Graduate Studies in Mathematics), Book 14, American Mathematical Society, 2nd edition, 2001. ISBN-13: 978-0821827833
+
+\bibitem{PWojtaszczyk1997}
+P. Wojtaszczyk, \textbf{A Mathematical Introduction to Wavelets}, (London Mathematical Society Student Texts), Cambridge University Press, 1997. ISBN-13: 978-0521578943 
+
+\bibitem{IDaubechies1992}
+Ingrid Daubechies, \textbf{Ten Lectures on Wavelets} (CBMS-NSF Regional Conference Series in Applied Mathematics), SIAM: Society for Industrial and Applied Mathematics, 1992. ISBN-13: 978-0898712742 
+
+
+
+
+\end{thebibliography}
+
+
+
+
+\end{document}
