@@ -122,17 +122,21 @@
 \subjclass[Wavelets]{Wavelets}
 \date{4 juillet 2015}
 \begin{abstract}
-I wanted to expound here, from an introductory and pedagogical starting point, on wavelets.  Note, my goal here \emph{is not to reinvent the wheel}.  This is meant to be the ``missing companion manual'' to the MIT OCW 18.327 material and to any book or course on or involving Wavelets, with (one of) the value being the Python code closely linked with each concept.  
+I wanted to expound here, from an introductory and pedagogical starting point, on wavelets.  Note, my goal here \emph{is not to reinvent the wheel}.  This is meant to be the ``missing companion manual'' to the MIT OCW 18.327 \url{http://ocw.mit.edu/courses/mathematics/18-327-wavelets-filter-banks-and-applications-spring-2003/} material and to any book or course on or involving Wavelets, with (one of) the value being the Python code closely linked with each concept.  
 \end{abstract}
 
 \maketitle
 
 One day on 18 juin 2015, I find myself needing to learn about wavelets, fast.  Here are notes, solutions to various exercises and ``textbook'' problems, and associated code and code snippets that I found useful in learning about and applying wavelets.  
 
-The first thing I now do when I want to pick up a new skill is to see if the MIT (Massachusetts Institute of Technology) OCW (Open-Course Ware) has a course on it.  So far, I've seen 18.327 Wavelets, Filter Banks and Applications, taught by Strang and Amaratunga in Spring 2003 \cite{GStrangKAmaratunga2003}.  I haven't seen it updated recently.  I'll try to give some updates from my perspective. (Note, this past week, 20150709, I saw that coursera has \href{https://www.coursera.org/course/compmethods}{Computational Methods for Data Analysis}; I'll try to look into that).  
+The first thing I now do when I want to pick up a new skill is to see if the MIT (Massachusetts Institute of Technology) OCW (Open-Course Ware) has a course on it.  So far, I've seen 18.327 Wavelets, Filter Banks and Applications, taught by Strang and Amaratunga in Spring 2003 \cite{GStrangKAmaratunga2003} (\url{http://ocw.mit.edu/courses/mathematics/18-327-wavelets-filter-banks-and-applications-spring-2003/}).  I haven't seen it updated recently.  I'll try to give some updates from my perspective. (Note, this past week, 20150709, I saw that coursera has \href{https://www.coursera.org/course/compmethods}{Computational Methods for Data Analysis}; I'll try to look into that).  
 
 Here are some features I want to mention about this exposition on Wavelets:
 \begin{itemize}
+\item EY : 20150720 I wanted to raise the issue about the wavelet and scaling function coefficients at each $j$th resolution.  I wanted to make resolve the distinction between doing the Fourier transform or essentially $z$-transform on the time $t$-domain (keep in mind that this could also be the spatial domain) and what it means when parts of the filter bank ``acts'' on the coefficients themselves.   
+
+My original thought was this (and please give any and all (negative) feedback on where this might fail); with filtration being a collection of nested subspaces, i.e. $V^0 \subset V^1 \subset V^2 \subset \dots$ (I was also curious if we can think of multiresolution analysis in terms of topological spaces):
+
 \item \textbf{Multiresolution analysis as a filtration of $L^2(\mathbb{R})$-algebras, with each subspace $V^j$ equipped with a $k$-algebra, $k^j$, that is an algebra for the coefficients of the $j$-level of resolution scaling function and wavelets.}  I explicitly make clear what spaces we are living on and the mapping involved and make explicit the mapping itself in the so-called filter bank representation with commutative diagrams \ref{SubSec:OnPerfectReconstruction}, \ref{SubSubSec:OrthonormalFilterBanks}.  The operations of convolution and downsampling and upsampling on $L^2(\mathbb{R})$ functions are clearly defined as an algebra and the corresponding operations in the so-called $z$-domain, which is really going to $L^2(\mathbb{C})$, is also clearly defined and the correspondence or ``dictionary'' between $L^2(\mathbb{R})$ and $L^2(\mathbb{C})$ clearly shown. 
 
 Then, with scaling functions and wavelets in a multiresolution analysis, I define a $k$-algebra, $k^j$, associated with each subspace $V^j$, for the $j$-level resolution scaling function and wavelet \emph{coefficients}.  This way, we know exactly which (sub)space ($V^j$ or $V^{j+1}$, or $k^j$ or $k^{j+1}$) we are living on at each step of a filter bank and again, the operations of convolution and downsampling and upsampling are reduced to an algebra (which is easy).  
